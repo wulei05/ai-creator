@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useModels } from '@/lib/hooks/useModels';
 
 type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3';
 
@@ -25,20 +26,34 @@ const ASPECT_RATIOS: { value: AspectRatio; label: string }[] = [
   { value: '4:3', label: '4:3' },
 ];
 
-const CREDIT_COST = 10;
 const POLL_INTERVAL = 3000;
-const MAX_POLL_DURATION = 3 * 60 * 1000; // 3 minutes
+const MAX_POLL_DURATION = 3 * 60 * 1000;
+
+// Models that don't support aspect ratio selection
+const NO_ASPECT_RATIO_MODELS = ['imagen-3', 'imagen-3-fast', 'gemini-image-flash', 'gemini-image-flash-exp'];
 
 export default function ImagePage() {
+  const { models, loading: modelsLoading } = useModels('image');
+
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
+  const [imageModel, setImageModel] = useState('');
   const [loading, setLoading] = useState(false);
-  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<TaskRecord[]>([]);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollStartRef = useRef<number>(0);
+
+  // Default to first available model
+  useEffect(() => {
+    if (models.length > 0 && !models.find((m) => m.id === imageModel)) {
+      setImageModel(models[0].id);
+    }
+  }, [models, imageModel]);
+
+  const currentModel = models.find((m) => m.id === imageModel);
+  const creditCost = currentModel?.credits ?? 0;
 
   const fetchHistory = async () => {
     try {
@@ -91,7 +106,6 @@ export default function ImagePage() {
         return;
       }
 
-      // Still pending/processing — keep polling
       pollTimerRef.current = setTimeout(() => pollStatus(taskId), POLL_INTERVAL);
     } catch {
       setLoading(false);
@@ -113,7 +127,11 @@ export default function ImagePage() {
       const res = await fetch('/api/ai/image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim(), aspect_ratio: aspectRatio }),
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          aspect_ratio: aspectRatio,
+          model: imageModel,
+        }),
       });
 
       const data = await res.json();
@@ -129,7 +147,15 @@ export default function ImagePage() {
         return;
       }
 
-      setCurrentTaskId(data.task_id);
+      // Gemini returns completed immediately with output_url
+      if (data.status === 'completed' && data.output_url) {
+        setLoading(false);
+        setGeneratedImage(data.output_url);
+        fetchHistory();
+        return;
+      }
+
+      // Flux Pro: start polling
       pollStartRef.current = Date.now();
       pollTimerRef.current = setTimeout(() => pollStatus(data.task_id), POLL_INTERVAL);
     } catch {
@@ -146,26 +172,67 @@ export default function ImagePage() {
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = objectUrl;
-      a.download = `flux-image-${Date.now()}.jpg`;
+      a.download = `ai-image-${Date.now()}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(objectUrl);
     } catch {
-      // Fallback: open in new tab
       window.open(url, '_blank');
     }
   };
+
+  if (modelsLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        <Loader2 className="size-5 animate-spin mr-2" />
+        <span>加载模型列表...</span>
+      </div>
+    );
+  }
+
+  if (models.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <h1 className="text-2xl font-semibold mb-2">AI 图像生成</h1>
+        <p className="text-muted-foreground">暂无可用的图像模型，请在管理后台配置 FAL_KEY 或 GOOGLE_API_KEY。</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-semibold">AI 图像生成</h1>
-        <p className="text-muted-foreground text-sm mt-1">由 Flux Pro 驱动，每次生成消耗 {CREDIT_COST} 积分</p>
+        <p className="text-muted-foreground text-sm mt-1">选择模型，输入描述词生成图像</p>
       </div>
 
       <Card>
         <CardContent className="space-y-4 pt-6">
+          {/* Model selector */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">模型</label>
+            <div className="flex gap-2">
+              {models.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setImageModel(m.id)}
+                  disabled={loading}
+                  className={`flex-1 rounded-lg border p-3 text-left transition-colors ${
+                    imageModel === m.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <div className="font-medium text-sm">{m.label}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {m.credits} 积分
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Prompt */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -182,24 +249,26 @@ export default function ImagePage() {
             />
           </div>
 
-          {/* Aspect Ratio */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">宽高比</label>
-            <div className="flex gap-2">
-              {ASPECT_RATIOS.map((ratio) => (
-                <Button
-                  key={ratio.value}
-                  variant={aspectRatio === ratio.value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setAspectRatio(ratio.value)}
-                  disabled={loading}
-                  className="min-w-16"
-                >
-                  {ratio.label}
-                </Button>
-              ))}
+          {/* Aspect Ratio — hidden for models that don't support it */}
+          {!NO_ASPECT_RATIO_MODELS.includes(imageModel) && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">宽高比</label>
+              <div className="flex gap-2">
+                {ASPECT_RATIOS.map((ratio) => (
+                  <Button
+                    key={ratio.value}
+                    variant={aspectRatio === ratio.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAspectRatio(ratio.value)}
+                    disabled={loading}
+                    className="min-w-16"
+                  >
+                    {ratio.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Generate Button */}
           <Button
@@ -211,17 +280,16 @@ export default function ImagePage() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                生成中...
+                生成中{imageModel === 'gemini-image' ? '（约10-20秒）' : '...'}
               </>
             ) : (
               <>
                 <ImageIcon className="mr-2 h-4 w-4" />
-                生成图像 ({CREDIT_COST} 积分)
+                生成图像 ({creditCost} 积分)
               </>
             )}
           </Button>
 
-          {/* Error */}
           {error && (
             <p className="text-sm text-destructive text-center">{error}</p>
           )}

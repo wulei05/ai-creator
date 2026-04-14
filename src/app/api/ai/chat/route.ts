@@ -5,7 +5,12 @@ import { chatRateLimit } from '@/lib/ratelimit';
 
 // export const runtime = 'edge'; // Disabled locally — re-enable for Vercel production
 
-const VALID_MODELS: ChatModel[] = ['gpt-4o', 'deepseek-chat', 'claude-sonnet-4-6'];
+const VALID_MODELS: ChatModel[] = [
+  'gpt-4o', 'deepseek-chat', 'claude-sonnet-4-6',
+  'gemini-2.5-pro', 'gemini-2.5-flash',
+  'gemini-2.0-flash', 'gemini-2.0-flash-lite',
+  'gemini-1.5-pro', 'gemini-1.5-flash',
+];
 
 export async function POST(req: Request) {
   // Auth: extract JWT from Authorization header or cookie
@@ -92,7 +97,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // Fix 3: Per-message validation — max 100 messages, valid roles, string content, max 50k chars
+  // Per-message validation — max 100 messages, valid roles, string content, max 50k chars
   if (messages.length > 100) {
     return new Response(JSON.stringify({ error: 'Too many messages' }), {
       status: 400,
@@ -110,6 +115,19 @@ export async function POST(req: Request) {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+    // Validate image field if present: must be a base64 data URL, max ~5MB
+    if (msg.image !== undefined) {
+      if (
+        typeof msg.image !== 'string' ||
+        !msg.image.startsWith('data:image/') ||
+        msg.image.length > 7_000_000
+      ) {
+        return new Response(JSON.stringify({ error: 'Invalid image format' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
   }
 

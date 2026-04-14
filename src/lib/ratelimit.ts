@@ -3,7 +3,10 @@ import { Redis } from '@upstash/redis';
 
 // Graceful fallback when Upstash env vars are not configured
 const hasUpstashConfig =
-  !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
+  !!process.env.UPSTASH_REDIS_REST_URL &&
+  !!process.env.UPSTASH_REDIS_REST_TOKEN &&
+  process.env.UPSTASH_REDIS_REST_URL.startsWith('https://') &&
+  !process.env.UPSTASH_REDIS_REST_URL.includes('your-');
 
 // A no-op rate limiter that always allows requests
 const noopLimiter = {

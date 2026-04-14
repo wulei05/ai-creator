@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Video, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { useModels } from '@/lib/hooks/useModels';
 
 type AspectRatio = '16:9' | '9:16' | '1:1';
 type Duration = 5 | 10;
@@ -34,11 +35,13 @@ const DURATIONS: { value: Duration; label: string }[] = [
   { value: 10, label: '10秒' },
 ];
 
-const CREDIT_COST = 50;
 const POLL_INTERVAL = 5000;
-const MAX_POLL_DURATION = 5 * 60 * 1000; // 5 minutes
+const MAX_POLL_DURATION = 5 * 60 * 1000;
 
 export default function VideoPage() {
+  const { models, loading: modelsLoading } = useModels('video');
+
+  const [videoModel, setVideoModel] = useState('');
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
   const [duration, setDuration] = useState<Duration>(5);
@@ -52,6 +55,13 @@ export default function VideoPage() {
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollStartRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Default to first available model
+  useEffect(() => {
+    if (models.length > 0 && !models.find((m) => m.id === videoModel)) {
+      setVideoModel(models[0].id);
+    }
+  }, [models, videoModel]);
 
   const fetchHistory = async () => {
     try {
@@ -203,6 +213,7 @@ export default function VideoPage() {
           image_url,
           duration,
           aspect_ratio: aspectRatio,
+          model: videoModel,
         }),
       });
 
@@ -245,17 +256,60 @@ export default function VideoPage() {
     }
   };
 
+  const currentModel = models.find((m) => m.id === videoModel);
+
+  if (modelsLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        <Loader2 className="size-5 animate-spin mr-2" />
+        <span>加载模型列表...</span>
+      </div>
+    );
+  }
+
+  if (models.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <h1 className="text-2xl font-semibold mb-2">AI 视频生成</h1>
+        <p className="text-muted-foreground">暂无可用的视频模型，请在管理后台配置 KLING_API_KEY。</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-semibold">AI 视频生成</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          由 Kling v2 驱动，图生视频，每次生成消耗 {CREDIT_COST} 积分
+          图生视频，每次生成消耗 {currentModel?.credits ?? 0} 积分
         </p>
       </div>
 
       <Card>
         <CardContent className="space-y-4 pt-6">
+          {/* Model selector */}
+          {models.length > 1 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">模型</label>
+              <div className="flex gap-2">
+                {models.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setVideoModel(m.id)}
+                    disabled={loading}
+                    className={`flex-1 rounded-lg border p-3 text-left transition-colors ${
+                      videoModel === m.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">{m.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{m.credits} 积分</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Image Upload */}
           <div className="space-y-2">
             <label className="text-sm font-medium">参考图片</label>
@@ -357,7 +411,7 @@ export default function VideoPage() {
             ) : (
               <>
                 <Video className="mr-2 h-4 w-4" />
-                生成视频 ({CREDIT_COST} 积分)
+                生成视频 ({currentModel?.credits ?? 0} 积分)
               </>
             )}
           </Button>

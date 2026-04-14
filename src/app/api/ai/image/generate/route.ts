@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { CREDIT_COSTS } from '@/lib/pricing';
 import { submitFluxImage } from '@/lib/ai/fal';
+import { generateGeminiImage, isGeminiImageModel } from '@/lib/ai/gemini-image';
 import { imageRateLimit } from '@/lib/ratelimit';
+
+const VALID_MODELS = [
+  'flux-pro',
+  'imagen-4', 'imagen-4-ultra', 'imagen-4-fast',
+  'gemini-2.5-flash-image', 'gemini-3-pro-image', 'gemini-3.1-flash-image',
+] as const;
+type ImageModel = typeof VALID_MODELS[number];
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -49,8 +58,12 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  if (!VALID_MODELS.includes(model as ImageModel)) {
+    return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
+  }
 
-  const credits_cost = CREDIT_COSTS['flux-pro'];
+  const imageModel = model as ImageModel;
+  const credits_cost = CREDIT_COSTS[imageModel];
 
   // Insert task with status='pending'
   const { data: task, error: insertError } = await supabase
@@ -58,7 +71,7 @@ export async function POST(request: NextRequest) {
     .insert({
       user_id: user.id,
       type: 'image',
-      model: 'flux-pro',
+      model: imageModel,
       prompt: prompt.trim(),
       status: 'pending',
       credits_cost,
@@ -67,6 +80,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (insertError || !task) {
+    console.error('Task insert error:', JSON.stringify(insertError));
     return NextResponse.json({ error: 'Failed to create task' }, { status: 500 });
   }
 
@@ -84,12 +98,62 @@ export async function POST(request: NextRequest) {
   );
 
   if (deductError || !deducted) {
-    // Mark task as failed
     await supabase.from('tasks').update({ status: 'failed' }).eq('id', task_id);
     return NextResponse.json({ error: 'Insufficient credits' }, { status: 400 });
   }
 
-  // Call fal.ai
+  // ── Gemini: synchronous generation ──────────────────────────────────────
+  if (isGeminiImageModel(imageModel)) {
+    try {
+      const base64Data = await generateGeminiImage(prompt.trim(), imageModel);
+
+      // Upload to Supabase Storage using service role
+      const adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      );
+
+      const fileName = `images/${user.id}/${task_id}.png`;
+      const imageBytes = Buffer.from(base64Data, 'base64');
+
+      const { error: uploadError } = await adminSupabase.storage
+        .from('ai-creations')
+        .upload(fileName, imageBytes, { contentType: 'image/png', upsert: true });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error('Failed to upload generated image');
+      }
+
+      const { data: { publicUrl } } = adminSupabase.storage
+        .from('ai-creations')
+        .getPublicUrl(fileName);
+
+      await supabase
+        .from('tasks')
+        .update({ status: 'completed', output_url: publicUrl })
+        .eq('id', task_id);
+
+      return NextResponse.json({
+        task_id,
+        credits_cost,
+        status: 'completed',
+        output_url: publicUrl,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('Gemini image generation error:', msg);
+      await supabase.from('tasks').update({ status: 'failed' }).eq('id', task_id);
+      await supabase.rpc('refund_credits', {
+        p_user_id: user.id,
+        p_amount: credits_cost,
+        p_task_id: task_id,
+      });
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
+  }
+
+  // ── Flux Pro: async queue ────────────────────────────────────────────────
   let request_id: string;
   try {
     request_id = await submitFluxImage({
@@ -98,7 +162,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('fal.ai submit error:', err);
-    // Refund credits and mark task failed
     await supabase.from('tasks').update({ status: 'failed' }).eq('id', task_id);
     await supabase.rpc('refund_credits', {
       p_user_id: user.id,
@@ -108,7 +171,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to submit image generation' }, { status: 500 });
   }
 
-  // Update task with upstream_id
   await supabase
     .from('tasks')
     .update({ upstream_id: request_id, status: 'processing' })
