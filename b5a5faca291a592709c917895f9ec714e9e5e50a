@@ -1,0 +1,31 @@
+src/lib/ai/fal.ts
+  256461a310aebdb9 1-49
+src/app/api/ai/image/generate/route.ts
+  256461a310aebdb9 1-105
+src/app/api/ai/image/status/[taskId]/route.ts
+  256461a310aebdb9 1-105
+src/app/(dashboard)/image/page.tsx
+  256461a310aebdb9 1-31,33-317
+src/app/api/ai/image/history/route.ts
+  256461a310aebdb9 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "b5a5faca291a592709c917895f9ec714e9e5e50a",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 604,
+      "total_deletions": 2,
+      "accepted_lines": 603,
+      "overriden_lines": 0
+    }
+  }
+}
