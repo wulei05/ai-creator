@@ -1,0 +1,27 @@
+src/app/(marketing)/page.tsx
+  256461a310aebdb9 1-256
+src/app/(marketing)/layout.tsx
+  256461a310aebdb9 1-25
+vercel.json
+  256461a310aebdb9 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "8b606beabefe5d764c9ce30ebcf52b662a2b629a",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 291,
+      "total_deletions": 0,
+      "accepted_lines": 291,
+      "overriden_lines": 0
+    }
+  }
+}
