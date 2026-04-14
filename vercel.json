@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "app/api/ai/video/generate/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/orders/webhook/route.ts": {
+      "maxDuration": 10
+    }
+  }
+}
