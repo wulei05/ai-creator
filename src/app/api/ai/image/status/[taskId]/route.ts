@@ -75,31 +75,24 @@ export async function GET(
       return NextResponse.json({ status: 'processing' });
     }
 
-    // IN_QUEUE or unknown
+    // IN_QUEUE or unknown — still waiting
     return NextResponse.json({ status: 'pending' });
   } catch (err) {
+    // fal.ai signals failures via exceptions (no FAILED status value in the type union)
     console.error('fal.ai status check error:', err);
-    // Check if it's a failed state from fal
     const errorMessage = err instanceof Error ? err.message : String(err);
-    const isFailed =
-      errorMessage.toLowerCase().includes('failed') ||
-      errorMessage.toLowerCase().includes('error');
 
-    if (isFailed) {
-      await supabase
-        .from('tasks')
-        .update({ status: 'failed' })
-        .eq('id', task.id);
+    await supabase
+      .from('tasks')
+      .update({ status: 'failed' })
+      .eq('id', task.id);
 
-      await supabase.rpc('refund_credits', {
-        p_user_id: user.id,
-        p_amount: task.credits_cost,
-        p_task_id: task.id,
-      });
+    await supabase.rpc('refund_credits', {
+      p_user_id: user.id,
+      p_amount: task.credits_cost,
+      p_task_id: task.id,
+    });
 
-      return NextResponse.json({ status: 'failed', error: 'Generation failed' });
-    }
-
-    return NextResponse.json({ status: task.status });
+    return NextResponse.json({ status: 'failed', error: errorMessage || 'Generation failed' });
   }
 }
