@@ -1,0 +1,23 @@
+src/app/api/ai/image/status/[taskId]/route.ts
+  256461a310aebdb9 78,81,85-88,90-94,96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "41847b47a3dc54908a51aad0971faaa245305cac",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 29,
+      "total_deletions": 36,
+      "accepted_lines": 14,
+      "overriden_lines": 0
+    }
+  }
+}
