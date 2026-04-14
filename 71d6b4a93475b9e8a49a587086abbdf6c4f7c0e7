@@ -1,0 +1,37 @@
+src/lib/supabase/server.ts
+  256461a310aebdb9 1-25
+src/app/(auth)/register/page.tsx
+  256461a310aebdb9 1-105
+src/app/api/auth/callback/route.ts
+  256461a310aebdb9 1-18
+src/lib/supabase/middleware.ts
+  256461a310aebdb9 1-47
+src/middleware.ts
+  256461a310aebdb9 1-12
+src/lib/supabase/client.ts
+  256461a310aebdb9 1-8
+src/app/(auth)/login/page.tsx
+  256461a310aebdb9 1-104
+src/app/(auth)/layout.tsx
+  256461a310aebdb9 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "71d6b4a93475b9e8a49a587086abbdf6c4f7c0e7",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 322,
+      "total_deletions": 0,
+      "accepted_lines": 322,
+      "overriden_lines": 0
+    }
+  }
+}
