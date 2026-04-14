@@ -1,6 +1,5 @@
 import { fal } from '@fal-ai/client';
-
-fal.config({ credentials: process.env.FAL_KEY! });
+import { getConfig } from '@/lib/config';
 
 type FluxImageSize =
   | 'square_hd'
@@ -25,6 +24,7 @@ export async function submitFluxImage(params: {
   prompt: string;
   aspect_ratio: string;
 }): Promise<string> {
+  fal.config({ credentials: await getConfig('FAL_KEY') });
   const result = await fal.queue.submit('fal-ai/flux-pro/v1.1', {
     input: {
       prompt: params.prompt,

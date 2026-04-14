@@ -1,19 +1,9 @@
 import crypto from 'crypto'
-
-const XUNHU_KEY = process.env.XUNHU_KEY!
-const XUNHU_APPID = process.env.XUNHU_APPID!
-
-function buildSign(params: Record<string, string>): string {
-  const sorted = Object.keys(params)
-    .sort()
-    .filter(k => params[k] !== '')
-    .map(k => `${k}=${params[k]}`)
-    .join('&') + `&key=${XUNHU_KEY}`
-  return crypto.createHash('md5').update(sorted).digest('hex').toUpperCase()
-}
+import { getConfig } from '@/lib/config'
 
 // Verify webhook signature (HMAC-MD5)
-export function verifyWebhook(params: Record<string, string>): boolean {
+export async function verifyWebhook(params: Record<string, string>): Promise<boolean> {
+  const XUNHU_KEY = await getConfig('XUNHU_KEY')
   const { sign, ...rest } = params
   const sorted = Object.keys(rest)
     .sort()
@@ -40,6 +30,9 @@ export async function createPayment(order: {
   notifyUrl: string    // webhook callback URL
   returnUrl: string    // redirect after payment
 }): Promise<{ payUrl: string; payId: string }> {
+  const XUNHU_KEY = await getConfig('XUNHU_KEY')
+  const XUNHU_APPID = await getConfig('XUNHU_APPID')
+
   const nonceStr = crypto.randomBytes(16).toString('hex')
   const time = Math.floor(Date.now() / 1000).toString()
 
@@ -54,7 +47,13 @@ export async function createPayment(order: {
     nonce_str: nonceStr,
   }
 
-  params.sign = buildSign(params)
+  // Build sign inline
+  const sorted = Object.keys(params)
+    .sort()
+    .filter(k => params[k] !== '')
+    .map(k => `${k}=${params[k]}`)
+    .join('&') + `&key=${XUNHU_KEY}`
+  params.sign = crypto.createHash('md5').update(sorted).digest('hex').toUpperCase()
 
   const res = await fetch('https://api.xunhupay.com/payment/do.html', {
     method: 'POST',

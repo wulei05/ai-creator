@@ -1,12 +1,6 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: 'https://api.deepseek.com',
-});
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+import { getConfig } from '@/lib/config';
 
 export type ChatModel = 'gpt-4o' | 'deepseek-chat' | 'claude-sonnet-4-6';
 export type Message = { role: 'user' | 'assistant'; content: string };
@@ -16,6 +10,7 @@ export async function* streamChat(
   messages: Message[]
 ): AsyncGenerator<string> {
   if (model === 'claude-sonnet-4-6') {
+    const anthropic = new Anthropic({ apiKey: await getConfig('ANTHROPIC_API_KEY') });
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
@@ -29,8 +24,24 @@ export async function* streamChat(
         yield chunk.delta.text;
       }
     }
+  } else if (model === 'gpt-4o') {
+    const client = new OpenAI({ apiKey: await getConfig('OPENAI_API_KEY') });
+    const stream = await client.chat.completions.create({
+      model,
+      messages,
+      stream: true,
+    });
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        yield content;
+      }
+    }
   } else {
-    const client = model === 'gpt-4o' ? openai : deepseek;
+    const client = new OpenAI({
+      apiKey: await getConfig('DEEPSEEK_API_KEY'),
+      baseURL: 'https://api.deepseek.com',
+    });
     const stream = await client.chat.completions.create({
       model,
       messages,

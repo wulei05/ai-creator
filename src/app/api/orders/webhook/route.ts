@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 1. Verify signature — return "success" on failure (400 would cause Xunhupay to keep retrying)
-  if (!verifyWebhook(params)) {
+  if (!await verifyWebhook(params)) {
     return new NextResponse('success')
   }
 

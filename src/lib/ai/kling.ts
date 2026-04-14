@@ -1,4 +1,5 @@
-const KLING_KEY = process.env.KLING_API_KEY!;
+import { getConfig } from '@/lib/config';
+
 const BASE_URL = 'https://api.klingai.com/v1';
 
 export async function createKlingVideo(params: {
@@ -7,6 +8,7 @@ export async function createKlingVideo(params: {
   duration: 5 | 10;
   aspect_ratio: string;
 }): Promise<string> {
+  const KLING_KEY = await getConfig('KLING_API_KEY');
   const res = await fetch(`${BASE_URL}/videos/image2video`, {
     method: 'POST',
     headers: {
@@ -39,6 +41,7 @@ export async function getKlingStatus(klingTaskId: string): Promise<{
   videoUrl?: string;
   duration?: number;
 }> {
+  const KLING_KEY = await getConfig('KLING_API_KEY');
   const res = await fetch(`${BASE_URL}/videos/image2video/${klingTaskId}`, {
     headers: { Authorization: `Bearer ${KLING_KEY}` },
     signal: AbortSignal.timeout(10_000),
