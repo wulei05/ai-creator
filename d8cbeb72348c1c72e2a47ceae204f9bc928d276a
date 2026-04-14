@@ -1,0 +1,23 @@
+.npmrc
+  c7d9fa309ec1bb91 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "d8cbeb72348c1c72e2a47ceae204f9bc928d276a",
+  "prompts": {
+    "c7d9fa309ec1bb91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "368e1407-f41a-4a3d-8098-d7099f0d1f40",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
