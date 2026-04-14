@@ -3,6 +3,32 @@ import { createClient } from '@/lib/supabase/server';
 import { CREDIT_COSTS } from '@/lib/pricing';
 import { createKlingVideo } from '@/lib/ai/kling';
 
+function isSafeImageUrl(rawUrl: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  // Only allow https
+  if (url.protocol !== 'https:') return false;
+
+  const hostname = url.hostname.toLowerCase();
+
+  // Block localhost and loopback
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return false;
+
+  // Block link-local (169.254.x.x)
+  if (/^169\.254\./.test(hostname)) return false;
+
+  // Block private RFC-1918 ranges
+  if (/^10\./.test(hostname)) return false;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return false;
+  if (/^192\.168\./.test(hostname)) return false;
+
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
@@ -41,10 +67,8 @@ export async function POST(request: NextRequest) {
   if (!image_url || typeof image_url !== 'string') {
     return NextResponse.json({ error: 'image_url is required' }, { status: 400 });
   }
-  try {
-    new URL(image_url);
-  } catch {
-    return NextResponse.json({ error: 'image_url must be a valid URL' }, { status: 400 });
+  if (!isSafeImageUrl(image_url)) {
+    return NextResponse.json({ error: 'image_url must be a valid https URL' }, { status: 400 });
   }
 
   const credits_cost = CREDIT_COSTS['kling-v2'];
@@ -103,10 +127,22 @@ export async function POST(request: NextRequest) {
   }
 
   // Update task with upstream_id
-  await supabase
+  const { error: updateError } = await supabase
     .from('tasks')
-    .update({ upstream_id: kling_task_id })
+    .update({ upstream_id: kling_task_id, status: 'processing' })
     .eq('id', task_id);
+
+  if (updateError) {
+    console.error('Failed to update task upstream_id:', updateError);
+    // Refund credits since task can't be tracked
+    await supabase.rpc('refund_credits', {
+      p_user_id: user.id,
+      p_amount: CREDIT_COSTS['kling-v2'],
+      p_task_id: task_id,
+    });
+    await supabase.from('tasks').update({ status: 'failed' }).eq('id', task_id);
+    return NextResponse.json({ error: 'Failed to record task' }, { status: 500 });
+  }
 
   return NextResponse.json({
     task_id,

@@ -44,6 +44,11 @@ export async function getKlingStatus(klingTaskId: string): Promise<{
     signal: AbortSignal.timeout(10_000),
   });
 
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Kling status API error ${res.status}: ${body}`);
+  }
+
   const data = await res.json();
   const taskData = data.data;
 

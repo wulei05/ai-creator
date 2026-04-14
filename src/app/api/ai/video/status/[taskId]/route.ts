@@ -51,7 +51,18 @@ export async function GET(
     const klingStatus = await getKlingStatus(task.upstream_id);
 
     if (klingStatus.status === 'succeed') {
-      const outputUrl = klingStatus.videoUrl ?? null;
+      if (!klingStatus.videoUrl) {
+        // Kling returned success but no video URL - treat as failure
+        await supabase.from('tasks').update({ status: 'failed' }).eq('id', task.id);
+        await supabase.rpc('refund_credits', {
+          p_user_id: user.id,
+          p_amount: task.credits_cost,
+          p_task_id: task.id,
+        });
+        return NextResponse.json({ status: 'failed', error: 'Video generation returned no result' });
+      }
+
+      const outputUrl = klingStatus.videoUrl;
 
       await supabase
         .from('tasks')

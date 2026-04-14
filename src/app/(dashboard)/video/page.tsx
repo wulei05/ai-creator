@@ -72,12 +72,33 @@ export default function VideoPage() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError('请上传 JPG、PNG、WebP 或 GIF 格式的图片');
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setError('图片大小不能超过 10MB');
+      return;
+    }
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setImageFile(file);
-    const url = URL.createObjectURL(file);
-    setImagePreview(url);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const uploadImage = async (): Promise<string> => {
