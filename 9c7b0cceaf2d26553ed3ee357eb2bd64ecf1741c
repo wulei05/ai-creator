@@ -1,0 +1,35 @@
+src/app/api/ai/video/generate/route.ts
+  256461a310aebdb9 5,44-59
+src/app/api/tasks/route.ts
+  256461a310aebdb9 1-49
+src/app/(dashboard)/history/page.tsx
+  256461a310aebdb9 1-174,176-298
+src/app/api/ai/chat/route.ts
+  256461a310aebdb9 4,52-68
+.env.example
+  256461a310aebdb9 20-23
+src/lib/ratelimit.ts
+  256461a310aebdb9 1-51
+src/app/api/ai/image/generate/route.ts
+  256461a310aebdb9 5,18-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9c7b0cceaf2d26553ed3ee357eb2bd64ecf1741c",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 453,
+      "total_deletions": 1,
+      "accepted_lines": 453,
+      "overriden_lines": 0
+    }
+  }
+}
