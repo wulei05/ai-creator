@@ -1,0 +1,35 @@
+supabase/migrations/006_credit_rpc.sql
+  256461a310aebdb9 1-67
+src/lib/pricing.ts
+  256461a310aebdb9 1-39
+supabase/migrations/001_credits.sql
+  256461a310aebdb9 1-27
+supabase/migrations/003_orders.sql
+  256461a310aebdb9 1-33
+supabase/migrations/002_credit_logs.sql
+  256461a310aebdb9 1-30
+supabase/migrations/004_tasks.sql
+  256461a310aebdb9 1-39
+supabase/migrations/005_conversations.sql
+  256461a310aebdb9 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9f5a251c4e73f593c9181b8a4db357ade82c7d81",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 256,
+      "total_deletions": 0,
+      "accepted_lines": 256,
+      "overriden_lines": 0
+    }
+  }
+}
