@@ -543,7 +543,7 @@ export default function ImagePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 p-6">
+    <div className="max-w-5xl mx-auto space-y-6 md:space-y-8">
 
       {/* Header */}
       <div className="flex items-start justify-between">

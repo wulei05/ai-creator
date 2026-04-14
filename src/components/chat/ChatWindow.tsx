@@ -215,8 +215,8 @@ export function ChatWindow() {
 
   return (
     <div className="flex h-full gap-4">
-      {/* Sidebar */}
-      <div className="flex w-52 flex-shrink-0 flex-col gap-2">
+      {/* Sidebar - 移动端隐藏 */}
+      <div className="hidden md:flex w-52 flex-shrink-0 flex-col gap-2">
         <Button variant="outline" className="w-full justify-start gap-2" onClick={newConversation}>
           <Plus className="size-4" />
           New Conversation

@@ -232,7 +232,7 @@ export default function HistoryPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 md:gap-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">历史记录</h1>
         <p className="mt-1 text-sm text-muted-foreground">查看你的图像和视频生成记录</p>
