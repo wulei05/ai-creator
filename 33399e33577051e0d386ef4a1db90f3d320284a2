@@ -1,0 +1,25 @@
+src/lib/payment.ts
+  256461a310aebdb9 57-58
+src/app/api/orders/webhook/route.ts
+  256461a310aebdb9 68-70,78-79,83-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "33399e33577051e0d386ef4a1db90f3d320284a2",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 32,
+      "total_deletions": 23,
+      "accepted_lines": 26,
+      "overriden_lines": 0
+    }
+  }
+}
