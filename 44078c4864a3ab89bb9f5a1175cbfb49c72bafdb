@@ -1,0 +1,25 @@
+.gitignore
+  256461a310aebdb9 35
+next.config.ts
+  256461a310aebdb9 1,4-11,13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "44078c4864a3ab89bb9f5a1175cbfb49c72bafdb",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 11,
+      "total_deletions": 4,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
