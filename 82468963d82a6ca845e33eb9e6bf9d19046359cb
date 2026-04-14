@@ -1,0 +1,35 @@
+src/app/(dashboard)/image/page.tsx
+  15c9dd8f9cd45006 546
+src/app/(dashboard)/video/page.tsx
+  15c9dd8f9cd45006 634
+src/app/layout.tsx
+  15c9dd8f9cd45006 1,16-28
+src/components/chat/ChatWindow.tsx
+  15c9dd8f9cd45006 218-219
+src/app/(dashboard)/history/page.tsx
+  15c9dd8f9cd45006 235
+src/app/(dashboard)/layout.tsx
+  15c9dd8f9cd45006 4,19-22,28-29,33-34
+src/components/dashboard/BottomNav.tsx
+  15c9dd8f9cd45006 1-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "82468963d82a6ca845e33eb9e6bf9d19046359cb",
+  "prompts": {
+    "15c9dd8f9cd45006": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0281263-6677-48c9-a7b9-fb1cbab7bf4d",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 69,
+      "total_deletions": 10,
+      "accepted_lines": 69,
+      "overriden_lines": 0
+    }
+  }
+}
