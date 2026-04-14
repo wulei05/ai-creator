@@ -54,16 +54,13 @@ async function generateWithGeminiContent(prompt: string, model: string, apiKey: 
     model,
     contents: prompt,
     config: {
-      // @ts-expect-error: responseModalities not yet typed
       responseModalities: ['IMAGE'],
     },
   });
 
   const parts = response.candidates?.[0]?.content?.parts ?? [];
   for (const part of parts) {
-    // @ts-expect-error: inlineData not yet typed in new SDK
     if (part.inlineData?.mimeType?.startsWith('image/') && part.inlineData?.data) {
-      // @ts-expect-error
       return part.inlineData.data as string;
     }
   }

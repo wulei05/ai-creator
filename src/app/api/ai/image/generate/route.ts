@@ -121,8 +121,8 @@ export async function POST(request: NextRequest) {
         .upload(fileName, imageBytes, { contentType: 'image/png', upsert: true });
 
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw new Error('Failed to upload generated image');
+        console.error('Storage upload error:', JSON.stringify(uploadError));
+        throw new Error(`Failed to upload generated image: ${uploadError.message}`);
       }
 
       const { data: { publicUrl } } = adminSupabase.storage
