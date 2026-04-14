@@ -3,7 +3,7 @@ import { streamChat, type ChatModel, type Message } from '@/lib/ai/chat';
 import { CREDIT_COSTS } from '@/lib/pricing';
 import { chatRateLimit } from '@/lib/ratelimit';
 
-export const runtime = 'edge';
+// export const runtime = 'edge'; // Disabled locally — re-enable for Vercel production
 
 const VALID_MODELS: ChatModel[] = ['gpt-4o', 'deepseek-chat', 'claude-sonnet-4-6'];
 
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
       .insert({
         user_id: user.id,
         model: chatModel,
-        messages_json: messages,
+        messages: messages,
       })
       .select('id')
       .single();
@@ -201,7 +201,7 @@ export async function POST(req: Request) {
           await adminSupabase
             .from('conversations')
             .update({
-              messages_json: allMessages,
+              messages: allMessages,
               model: chatModel,
             })
             .eq('id', resolvedConversationId)
