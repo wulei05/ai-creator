@@ -39,7 +39,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Build URLs
-  const baseUrl = process.env.NEXT_PUBLIC_URL ?? `https://${req.headers.get('host')}`
+  const baseUrl = process.env.NEXT_PUBLIC_URL
+  if (!baseUrl) {
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+  }
   const notifyUrl = `${baseUrl}/api/orders/webhook`
   const returnUrl = `${baseUrl}/credits`
 

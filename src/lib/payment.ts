@@ -25,7 +25,11 @@ export function verifyWebhook(params: Record<string, string>): boolean {
     .update(sorted)
     .digest('hex')
     .toUpperCase()
-  return expected === sign
+  if (!sign) return false
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, 'utf8'),
+    Buffer.from(sign, 'utf8')
+  )
 }
 
 // Create payment via Xunhupay API
@@ -56,6 +60,7 @@ export async function createPayment(order: {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(params).toString(),
+    signal: AbortSignal.timeout(10_000),
   })
 
   const json = await res.json() as {

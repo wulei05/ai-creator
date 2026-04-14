@@ -21,12 +21,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Verify signature
+  // 1. Verify signature — return "success" on failure (400 would cause Xunhupay to keep retrying)
   if (!verifyWebhook(params)) {
-    return new NextResponse('invalid signature', { status: 400 })
+    return new NextResponse('success')
   }
 
-  // Must be paid status
+  // 2. Must be paid status
   if (params.status !== 'OD') {
     return new NextResponse('success')
   }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient()
 
-  // Find the order
+  // 3. Find the order
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .select('id, user_id, amount_fen, credits, status')
@@ -53,21 +53,39 @@ export async function POST(req: NextRequest) {
     return new NextResponse('order not found', { status: 404 })
   }
 
-  // Idempotency: already paid
-  if (order.status === 'paid') {
+  // 4. PRIMARY IDEMPOTENCY CHECK: query credit_logs for a purchase entry with this order_id
+  //    credit_logs is the true idempotency source because add_credits is NOT idempotent
+  //    (no unique constraint on order_id in credit_logs table)
+  const { data: existingLog, error: logQueryError } = await supabase
+    .from('credit_logs')
+    .select('id')
+    .eq('order_id', order.id)
+    .eq('action', 'purchase')
+    .maybeSingle()
+
+  if (logQueryError) {
+    console.error('credit_logs query error:', logQueryError)
+    return new NextResponse('database error', { status: 500 })
+  }
+
+  if (existingLog) {
+    // Credits already granted — idempotent success
     return new NextResponse('success')
   }
 
-  // Verify amount
+  // 5. SECONDARY: order already marked 'paid' but no credit_log entry
+  //    → partial failure from a previous attempt → fall through to retry add_credits
+
+  // 6. Verify amount
   const expectedFee = order.amount_fen / 100
   if (Math.abs(totalFee - expectedFee) > 0.001) {
     console.error(`Fee mismatch: expected ${expectedFee}, got ${totalFee}`)
     return new NextResponse('fee mismatch', { status: 400 })
   }
 
-  // Mark order as paid FIRST (atomic guard against double-credit on retry).
-  // Filter on status='pending' so concurrent requests affect 0 rows and skip credit grant.
-  const { data: updatedRows, error: updateError } = await supabase
+  // 7. Update order to 'paid' (filter on status='pending' — safe to call even if already paid
+  //    since we already verified via credit_logs above)
+  const { error: updateError } = await supabase
     .from('orders')
     .update({
       status: 'paid',
@@ -76,30 +94,26 @@ export async function POST(req: NextRequest) {
     })
     .eq('id', order.id)
     .eq('status', 'pending')
-    .select('id')
 
   if (updateError) {
     console.error('Order update error:', updateError)
     return new NextResponse('update error', { status: 500 })
   }
 
-  // updatedRows.length === 0 means another concurrent request already claimed the update
-  if (!updatedRows || updatedRows.length === 0) {
-    return new NextResponse('success')
-  }
-
-  // Add credits via RPC (SECURITY DEFINER)
+  // 8. Call add_credits RPC (SECURITY DEFINER)
   const { error: rpcError } = await supabase.rpc('add_credits', {
     p_user_id: order.user_id,
     p_amount: order.credits,
     p_order_id: order.id,
   })
 
+  // 9. If add_credits FAILS → return 500 so Xunhupay retries
+  //    On retry: credit_logs still empty → will attempt add_credits again
   if (rpcError) {
-    // Order is already marked paid — stop Xunhupay retries to prevent double-credit.
-    // Log for manual resolution via customer support.
-    console.error('ALERT: add_credits RPC failed after order marked paid. Manual credit needed for order:', order.id, rpcError)
+    console.error('add_credits RPC failed for order:', order.id, rpcError)
+    return new NextResponse('credits error', { status: 500 })
   }
 
+  // 10. All done
   return new NextResponse('success')
 }
