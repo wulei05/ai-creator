@@ -1,0 +1,29 @@
+src/components/chat/ChatWindow.tsx
+  256461a310aebdb9 1-326
+src/app/(dashboard)/chat/page.tsx
+  256461a310aebdb9 1-2,4-8
+src/lib/ai/chat.ts
+  256461a310aebdb9 1-46
+src/app/api/ai/chat/route.ts
+  256461a310aebdb9 1-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "c7e63bba60241af8358edaae3a82eb81622d5875",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 536,
+      "total_deletions": 1,
+      "accepted_lines": 536,
+      "overriden_lines": 0
+    }
+  }
+}
