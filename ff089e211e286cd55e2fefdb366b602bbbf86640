@@ -1,0 +1,43 @@
+src/app/api/admin/config/route.ts
+  256461a310aebdb9 1-76
+supabase/migrations/007_app_config.sql
+  256461a310aebdb9 1-24
+src/lib/supabase/middleware.ts
+  256461a310aebdb9 31
+src/app/(admin)/admin/page.tsx
+  256461a310aebdb9 1-185
+src/app/api/orders/webhook/route.ts
+  256461a310aebdb9 25
+src/lib/ai/chat.ts
+  256461a310aebdb9 3,13,27-37,41-44
+src/lib/payment.ts
+  256461a310aebdb9 2,5-6,33-35,50-56
+src/app/(admin)/layout.tsx
+  256461a310aebdb9 1-32
+src/lib/ai/kling.ts
+  256461a310aebdb9 1-2,11,44
+src/lib/ai/fal.ts
+  256461a310aebdb9 2,27
+src/lib/config.ts
+  256461a310aebdb9 1-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "ff089e211e286cd55e2fefdb366b602bbbf86640",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 390,
+      "total_deletions": 27,
+      "accepted_lines": 390,
+      "overriden_lines": 0
+    }
+  }
+}
