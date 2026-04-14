@@ -1,0 +1,31 @@
+src/lib/ai/kling.ts
+  256461a310aebdb9 1-55
+src/app/api/ai/video/status/[taskId]/route.ts
+  256461a310aebdb9 1-98
+src/app/(dashboard)/video/page.tsx
+  256461a310aebdb9 1-40,42-442
+src/app/api/ai/video/history/route.ts
+  256461a310aebdb9 1-28
+src/app/api/ai/video/generate/route.ts
+  256461a310aebdb9 1-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "7879be294ce86bd64848d34d599ada72061e93ea",
+  "prompts": {
+    "256461a310aebdb9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4fcbd7dd-a964-49da-884c-3ab45b8c0245",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "wulei",
+      "messages": [],
+      "total_additions": 738,
+      "total_deletions": 1,
+      "accepted_lines": 738,
+      "overriden_lines": 0
+    }
+  }
+}
