@@ -74,6 +74,27 @@ export async function POST(req: Request) {
     });
   }
 
+  // Fix 3: Per-message validation — max 100 messages, valid roles, string content, max 50k chars
+  if (messages.length > 100) {
+    return new Response(JSON.stringify({ error: 'Too many messages' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  const validRoles = ['user', 'assistant'];
+  for (const msg of messages) {
+    if (
+      !validRoles.includes(msg.role) ||
+      typeof msg.content !== 'string' ||
+      msg.content.length > 50_000
+    ) {
+      return new Response(JSON.stringify({ error: 'Invalid message format' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
   const chatModel = model as ChatModel;
 
   // Create service role client for DB operations
@@ -82,19 +103,49 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Fix 1: Resolve conversation_id BEFORE streaming so we can emit it as the first SSE event.
+  // If a conversation_id was provided by the client, use it; otherwise insert a new row now
+  // with a placeholder and get its generated UUID.
+  let resolvedConversationId: string;
+  if (conversation_id) {
+    resolvedConversationId = conversation_id;
+  } else {
+    const { data: newConv, error: insertErr } = await adminSupabase
+      .from('conversations')
+      .insert({
+        user_id: user.id,
+        model: chatModel,
+        messages_json: messages,
+      })
+      .select('id')
+      .single();
+
+    if (insertErr || !newConv) {
+      console.error('Failed to create conversation:', insertErr);
+      return new Response(JSON.stringify({ error: 'Failed to create conversation' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    resolvedConversationId = newConv.id as string;
+  }
+
   const encoder = new TextEncoder();
   let fullResponse = '';
 
   const stream = new ReadableStream({
     async start(controller) {
+      // Fix 1: Emit conversation_id as the FIRST SSE event so the client can track it
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ conversation_id: resolvedConversationId })}\n\n`)
+      );
+
       try {
         for await (const delta of streamChat(chatModel, messages)) {
           fullResponse += delta;
           const data = `data: ${JSON.stringify({ delta })}\n\n`;
           controller.enqueue(encoder.encode(data));
         }
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-        controller.close();
       } catch (err) {
         console.error('Stream error:', err);
         const errorData = `data: ${JSON.stringify({ error: 'Stream error' })}\n\n`;
@@ -103,47 +154,50 @@ export async function POST(req: Request) {
         return;
       }
 
-      // Post-stream: deduct credits and save conversation
-      try {
-        const allMessages: Message[] = [
-          ...messages,
-          { role: 'assistant', content: fullResponse },
-        ];
-        const totalChars = allMessages.reduce(
-          (sum, m) => sum + m.content.length,
-          0
-        );
-        const tokenK = Math.max(1, Math.ceil(totalChars / 4 / 1000));
-        const creditCost = CREDIT_COSTS[chatModel] * tokenK;
+      // Fix 2: Start the DB work promise BEFORE closing the stream.
+      // On Node.js adapter the async start() continues after close(), so the await below
+      // ensures completion. On Vercel Edge, the isolate lifetime is extended briefly after
+      // close() which is best-effort but sufficient for MVP.
+      const dbPromise = (async () => {
+        try {
+          const allMessages: Message[] = [
+            ...messages,
+            { role: 'assistant', content: fullResponse },
+          ];
+          const totalChars = allMessages.reduce(
+            (sum, m) => sum + m.content.length,
+            0
+          );
+          const tokenK = Math.max(1, Math.ceil(totalChars / 4 / 1000));
+          const creditCost = CREDIT_COSTS[chatModel] * tokenK;
 
-        // Deduct credits
-        await adminSupabase.rpc('deduct_credits', {
-          p_user_id: user.id,
-          p_amount: creditCost,
-          p_task_id: null,
-          p_desc: `AI 对话 (${chatModel})`,
-        });
+          // Deduct credits
+          await adminSupabase.rpc('deduct_credits', {
+            p_user_id: user.id,
+            p_amount: creditCost,
+            p_task_id: null,
+            p_desc: `AI 对话 (${chatModel})`,
+          });
 
-        // Save/update conversation
-        if (conversation_id) {
+          // Update the conversation with the full message history (including assistant reply)
           await adminSupabase
             .from('conversations')
             .update({
               messages_json: allMessages,
               model: chatModel,
             })
-            .eq('id', conversation_id)
+            .eq('id', resolvedConversationId)
             .eq('user_id', user.id);
-        } else {
-          await adminSupabase.from('conversations').insert({
-            user_id: user.id,
-            model: chatModel,
-            messages_json: allMessages,
-          });
+        } catch (postErr) {
+          console.error('Post-stream error:', postErr);
         }
-      } catch (postErr) {
-        console.error('Post-stream error:', postErr);
-      }
+      })();
+
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+      controller.close();
+
+      // Await after close to ensure completion on Node.js adapter
+      await dbPromise;
     },
   });
 

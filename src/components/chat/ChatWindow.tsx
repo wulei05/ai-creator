@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { createClient } from '@/lib/supabase/client';
@@ -35,7 +35,8 @@ export function ChatWindow() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [credits, setCredits] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  // Fix 4: Stable supabase reference — useMemo prevents new object on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -140,15 +141,20 @@ export function ChatWindow() {
             break;
           }
           try {
-            const { delta } = JSON.parse(payload);
-            if (delta) {
+            const parsed = JSON.parse(payload);
+            // Fix 1: capture conversation_id emitted by server so subsequent messages
+            // update the same conversation row instead of creating a new one
+            if (parsed.conversation_id) {
+              setConversationId(parsed.conversation_id);
+            }
+            if (parsed.delta) {
               setMessages((prev) => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
                 if (last?.role === 'assistant') {
                   updated[updated.length - 1] = {
                     ...last,
-                    content: last.content + delta,
+                    content: last.content + parsed.delta,
                   };
                 }
                 return updated;
