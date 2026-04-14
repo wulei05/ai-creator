@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { CREDIT_COSTS } from '@/lib/pricing';
 import { createKlingVideo } from '@/lib/ai/kling';
+import { videoRateLimit } from '@/lib/ratelimit';
 
 function isSafeImageUrl(rawUrl: string): boolean {
   let url: URL;
@@ -38,6 +39,22 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Rate limit check
+  const { success, limit, remaining, reset } = await videoRateLimit.limit(user.id);
+  if (!success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait before trying again.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': String(limit),
+          'X-RateLimit-Remaining': String(remaining),
+          'X-RateLimit-Reset': String(reset),
+        },
+      }
+    );
   }
 
   let body: {

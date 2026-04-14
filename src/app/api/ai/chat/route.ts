@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { streamChat, type ChatModel, type Message } from '@/lib/ai/chat';
 import { CREDIT_COSTS } from '@/lib/pricing';
+import { chatRateLimit } from '@/lib/ratelimit';
 
 export const runtime = 'edge';
 
@@ -46,6 +47,23 @@ export async function POST(req: Request) {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  // Rate limit check (must happen before streaming starts)
+  const { success, limit, remaining, reset } = await chatRateLimit.limit(user.id);
+  if (!success) {
+    return new Response(
+      JSON.stringify({ error: 'Too many requests. Please wait before trying again.' }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RateLimit-Limit': String(limit),
+          'X-RateLimit-Remaining': String(remaining),
+          'X-RateLimit-Reset': String(reset),
+        },
+      }
+    );
   }
 
   let body: { model?: string; messages?: Message[]; conversation_id?: string };
