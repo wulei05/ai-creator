@@ -54,8 +54,8 @@ export async function createPayment(order: {
 
   const res = await fetch('https://api.xunhupay.com/payment/do.html', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(params).toString(),
   })
 
   const json = await res.json() as {
