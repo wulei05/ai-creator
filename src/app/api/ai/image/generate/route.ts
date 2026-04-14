@@ -7,7 +7,7 @@ import { generateGeminiImage, isGeminiImageModel } from '@/lib/ai/gemini-image';
 import { imageRateLimit } from '@/lib/ratelimit';
 
 const VALID_MODELS = [
-  'flux-pro',
+  'flux-schnell', 'flux-dev', 'flux-pro',
   'imagen-4', 'imagen-4-ultra', 'imagen-4-fast',
   'gemini-2.5-flash-image', 'gemini-3-pro-image', 'gemini-3.1-flash-image',
 ] as const;
@@ -159,6 +159,7 @@ export async function POST(request: NextRequest) {
     request_id = await submitFluxImage({
       prompt: prompt.trim(),
       aspect_ratio,
+      model: imageModel,
     });
   } catch (err) {
     console.error('fal.ai submit error:', err);

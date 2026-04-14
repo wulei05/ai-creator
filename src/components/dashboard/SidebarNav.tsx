@@ -2,16 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, Image, Video, History, Coins, Sparkles } from 'lucide-react'
+import { MessageSquare, Image, Video, LayoutDashboard, Coins, Sparkles, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BalanceBadge } from '@/components/credits/BalanceBadge'
 
 const navItems = [
-  { href: '/chat',    icon: MessageSquare, label: 'AI 对话' },
-  { href: '/image',   icon: Image,         label: 'AI 图像' },
-  { href: '/video',   icon: Video,         label: 'AI 视频' },
-  { href: '/history', icon: History,       label: '历史记录' },
-  { href: '/credits', icon: Coins,         label: '积分' },
+  { href: '/chat',      icon: MessageSquare,   label: 'AI 对话' },
+  { href: '/image',     icon: Image,           label: 'AI 图像' },
+  { href: '/video',     icon: Video,           label: 'AI 视频' },
+  { href: '/studio',    icon: LayoutDashboard, label: '创作室' },
+  { href: '/community', icon: Users,           label: '社区' },
+  { href: '/credits',   icon: Coins,           label: '积分' },
 ]
 
 export function SidebarNav() {

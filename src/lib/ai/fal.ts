@@ -20,12 +20,20 @@ function aspectRatioToImageSize(aspectRatio: string): FluxImageSize {
   return map[aspectRatio] ?? 'square_hd';
 }
 
+const FAL_MODEL_ENDPOINTS: Record<string, string> = {
+  'flux-schnell': 'fal-ai/flux/schnell',
+  'flux-dev':     'fal-ai/flux/dev',
+  'flux-pro':     'fal-ai/flux-pro/v1.1',
+};
+
 export async function submitFluxImage(params: {
   prompt: string;
   aspect_ratio: string;
+  model?: string;
 }): Promise<string> {
   fal.config({ credentials: await getConfig('FAL_KEY') });
-  const result = await fal.queue.submit('fal-ai/flux-pro/v1.1', {
+  const endpoint = FAL_MODEL_ENDPOINTS[params.model ?? 'flux-pro'] ?? FAL_MODEL_ENDPOINTS['flux-pro'];
+  const result = await fal.queue.submit(endpoint, {
     input: {
       prompt: params.prompt,
       image_size: aspectRatioToImageSize(params.aspect_ratio),

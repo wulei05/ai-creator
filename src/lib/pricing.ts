@@ -29,6 +29,8 @@ export type PackageId = keyof typeof PACKAGES
 
 export const CREDIT_COSTS = {
   // ── Image generation ──────────────────────────────
+  'flux-schnell':            3,
+  'flux-dev':                8,
   'flux-pro':               10,
   'imagen-4':               10,
   'imagen-4-ultra':         15,

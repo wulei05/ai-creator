@@ -258,26 +258,6 @@ export function ChatWindow() {
 
       {/* Main chat area */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-xl border bg-background">
-        {/* Model selector — only shows configured models */}
-        <div className="flex items-center gap-1 border-b px-3 py-2 flex-wrap">
-          {models.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setModel(m.id as ChatModel)}
-              className={cn(
-                'rounded-lg px-2.5 py-1 text-xs transition-colors',
-                model === m.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {m.label}
-              <span className="ml-1 opacity-60">{m.credits}c</span>
-              {m.vision && <span className="ml-1 opacity-50">👁</span>}
-            </button>
-          ))}
-        </div>
-
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {messages.length === 0 ? (
@@ -353,14 +333,24 @@ export function ChatWindow() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={
-                supportsVision
-                  ? 'Type a message or attach an image… (Enter to send)'
-                  : 'Type a message… (Enter to send, Shift+Enter for newline)'
-              }
+              placeholder="发送消息… (Enter 发送，Shift+Enter 换行)"
               className="min-h-[44px] max-h-32 resize-none"
               disabled={isStreaming}
             />
+            {/* 模型选择下拉 */}
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value as ChatModel)}
+              disabled={isStreaming}
+              className="h-10 shrink-0 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 max-w-[120px]"
+              title="选择模型"
+            >
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label} · {m.credits}c{m.vision ? ' 👁' : ''}
+                </option>
+              ))}
+            </select>
             <Button
               onClick={sendMessage}
               disabled={(!input.trim() && !pendingImage) || isStreaming}

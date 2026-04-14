@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { LogOut } from 'lucide-react'
+import { History, LogOut } from 'lucide-react'
 
 export function UserMenu({ user }: { user: User }) {
   const router = useRouter()
@@ -33,6 +33,11 @@ export function UserMenu({ user }: { user: User }) {
         <div className="px-2 py-1.5 text-xs text-muted-foreground truncate">
           {user.email}
         </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push('/history')} className="cursor-pointer">
+          <History className="mr-2 h-4 w-4" />
+          历史记录
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} variant="destructive" className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />

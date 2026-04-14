@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, Image, Video, History, Coins } from 'lucide-react'
+import { MessageSquare, Image, Video, Users, Coins } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/chat',    icon: MessageSquare, label: 'AI 对话' },
-  { href: '/image',   icon: Image,         label: 'AI 图像' },
-  { href: '/video',   icon: Video,         label: 'AI 视频' },
-  { href: '/history', icon: History,       label: '历史' },
-  { href: '/credits', icon: Coins,         label: '积分' },
+  { href: '/chat',      icon: MessageSquare, label: 'AI 对话' },
+  { href: '/image',     icon: Image,         label: 'AI 图像' },
+  { href: '/video',     icon: Video,         label: 'AI 视频' },
+  { href: '/community', icon: Users,         label: '社区' },
+  { href: '/credits',   icon: Coins,         label: '积分' },
 ]
 
 export function BottomNav() {

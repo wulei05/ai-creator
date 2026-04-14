@@ -17,6 +17,9 @@ export interface ModelsResponse {
 }
 
 const MODEL_KEY_MAP: Record<string, string> = {
+  // image (fal.ai)
+  'flux-schnell':           'FAL_KEY',
+  'flux-dev':               'FAL_KEY',
   // chat
   'gpt-4o':              'OPENAI_API_KEY',
   'deepseek-chat':       'DEEPSEEK_API_KEY',
@@ -63,6 +66,8 @@ const ALL_CHAT_MODELS: ModelInfo[] = [
 ];
 
 const ALL_IMAGE_MODELS: ModelInfo[] = [
+  { id: 'flux-schnell',           label: 'Flux Schnell',         credits: CREDIT_COSTS['flux-schnell'] },
+  { id: 'flux-dev',               label: 'Flux Dev',             credits: CREDIT_COSTS['flux-dev'] },
   { id: 'flux-pro',               label: 'Flux Pro',             credits: CREDIT_COSTS['flux-pro'] },
   { id: 'imagen-4-ultra',         label: 'Imagen 4 Ultra',       credits: CREDIT_COSTS['imagen-4-ultra'] },
   { id: 'imagen-4',               label: 'Imagen 4',             credits: CREDIT_COSTS['imagen-4'] },
