@@ -9,8 +9,8 @@ const hasUpstashConfig =
 const noopLimiter = {
   limit: async (_identifier: string) => ({
     success: true,
-    limit: 0,
-    remaining: 0,
+    limit: -1,
+    remaining: -1, // -1 signals "no limit applied" (Upstash not configured)
     reset: 0,
     pending: Promise.resolve(),
   }),
