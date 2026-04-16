@@ -2,22 +2,23 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, Image, Video, Users, Coins } from 'lucide-react'
+import { MessageSquare, Image, Video, Users, Home, LayoutDashboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/chat',      icon: MessageSquare, label: 'AI 对话' },
-  { href: '/image',     icon: Image,         label: 'AI 图像' },
-  { href: '/video',     icon: Video,         label: 'AI 视频' },
-  { href: '/community', icon: Users,         label: '社区' },
-  { href: '/credits',   icon: Coins,         label: '积分' },
+  { href: '/home',      icon: Home,            label: '首页' },
+  { href: '/chat',      icon: MessageSquare,   label: '会话' },
+  { href: '/image',     icon: Image,           label: '图像' },
+  { href: '/video',     icon: Video,           label: '视频' },
+  { href: '/studio',    icon: LayoutDashboard, label: '创作室' },
+  { href: '/community', icon: Users,           label: '社区' },
 ]
 
 export function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
       {navItems.map(({ href, icon: Icon, label }) => {
         const active = pathname.startsWith(href)
         return (
@@ -25,13 +26,11 @@ export function BottomNav() {
             key={href}
             href={href}
             className={cn(
-              'flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors',
-              active
-                ? 'text-primary'
-                : 'text-muted-foreground'
+              'flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-colors',
+              active ? 'text-primary' : 'text-muted-foreground'
             )}
           >
-            <Icon className={cn('h-5 w-5', active && 'stroke-[2.5px]')} />
+            <Icon className={cn('h-[18px] w-[18px]', active && 'stroke-[2.5px]')} />
             <span>{label}</span>
           </Link>
         )

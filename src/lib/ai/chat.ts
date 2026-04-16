@@ -6,7 +6,13 @@ import { getConfig } from '@/lib/config';
 export type ChatModel =
   | 'gpt-4o'
   | 'deepseek-chat'
+  | 'deepseek-reasoner'
   | 'claude-sonnet-4-6'
+  | 'grok-4'
+  | 'grok-3'
+  | 'grok-3-fast'
+  | 'grok-3-mini'
+  | 'grok-3-mini-fast'
   | 'gemini-3.1-pro'
   | 'gemini-3-pro'
   | 'gemini-3-flash'
@@ -144,14 +150,53 @@ export async function* streamChat(
       if (content) yield content;
     }
 
+  // ── Grok (xAI — OpenAI compatible) ──────────────────────────────────────
+  } else if (['grok-4', 'grok-3', 'grok-3-fast', 'grok-3-mini', 'grok-3-mini-fast'].includes(model)) {
+    const GROK_MODEL_MAP: Partial<Record<ChatModel, string>> = {
+      'grok-4':          'grok-4-0709',
+      'grok-3':          'grok-3',
+      'grok-3-fast':     'grok-4-fast-non-reasoning',
+      'grok-3-mini':     'grok-3-mini',
+      'grok-3-mini-fast':'grok-4-1-fast-non-reasoning',
+    };
+    const client = new OpenAI({
+      apiKey: await getConfig('XAI_API_KEY'),
+      baseURL: 'https://api.x.ai/v1',
+    });
+    const grokMessages = messages.map((m): OpenAI.ChatCompletionMessageParam => {
+      if (m.image && m.role === 'user') {
+        return {
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: m.image, detail: 'auto' } },
+            { type: 'text', text: m.content },
+          ],
+        };
+      }
+      return { role: m.role, content: m.content };
+    });
+    const stream = await client.chat.completions.create({
+      model: GROK_MODEL_MAP[model] ?? model,
+      messages: grokMessages,
+      stream: true,
+    });
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) yield content;
+    }
+
   // ── DeepSeek (text only) ──────────────────────────────────────────────────
   } else {
+    const DEEPSEEK_MODEL_MAP: Partial<Record<ChatModel, string>> = {
+      'deepseek-chat':     'deepseek-chat',
+      'deepseek-reasoner': 'deepseek-reasoner',
+    };
     const client = new OpenAI({
       apiKey: await getConfig('DEEPSEEK_API_KEY'),
       baseURL: 'https://api.deepseek.com',
     });
     const stream = await client.chat.completions.create({
-      model,
+      model: DEEPSEEK_MODEL_MAP[model] ?? 'deepseek-chat',
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       stream: true,
     });

@@ -4,9 +4,11 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { CREDIT_COSTS } from '@/lib/pricing';
 import { submitFluxImage } from '@/lib/ai/fal';
 import { generateGeminiImage, isGeminiImageModel } from '@/lib/ai/gemini-image';
+import { generateGrokImage } from '@/lib/ai/grok-image';
 import { imageRateLimit } from '@/lib/ratelimit';
 
 const VALID_MODELS = [
+  'grok-image',
   'flux-schnell', 'flux-dev', 'flux-pro',
   'imagen-4', 'imagen-4-ultra', 'imagen-4-fast',
   'gemini-2.5-flash-image', 'gemini-3-pro-image', 'gemini-3.1-flash-image',
@@ -149,6 +151,31 @@ export async function POST(request: NextRequest) {
         p_amount: credits_cost,
         p_task_id: task_id,
       });
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
+  }
+
+  // ── Grok Image: synchronous generation ──────────────────────────────────
+  if (imageModel === 'grok-image') {
+    try {
+      const b64 = await generateGrokImage(prompt.trim());
+      const adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      );
+      const fileName = `images/${user.id}/${task_id}.png`;
+      const { error: uploadError } = await adminSupabase.storage
+        .from('ai-creations')
+        .upload(fileName, Buffer.from(b64, 'base64'), { contentType: 'image/png', upsert: true });
+      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+      const { data: { publicUrl } } = adminSupabase.storage.from('ai-creations').getPublicUrl(fileName);
+      await supabase.from('tasks').update({ status: 'completed', output_url: publicUrl }).eq('id', task_id);
+      return NextResponse.json({ task_id, credits_cost, status: 'completed', output_url: publicUrl });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('Grok image generation error:', msg);
+      await supabase.from('tasks').update({ status: 'failed' }).eq('id', task_id);
+      await supabase.rpc('refund_credits', { p_user_id: user.id, p_amount: credits_cost, p_task_id: task_id });
       return NextResponse.json({ error: msg }, { status: 500 });
     }
   }

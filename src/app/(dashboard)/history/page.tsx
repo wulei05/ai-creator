@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { ImageIcon, VideoIcon, Loader2, AlertCircle } from 'lucide-react';
+import { ImageIcon, VideoIcon, Loader2, AlertCircle, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
 type TaskType = 'image' | 'video';
@@ -31,22 +32,18 @@ function relativeTime(dateStr: string): string {
   if (minutes < 60) return `${minutes} 分钟前`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} 小时前`;
-  const days = Math.floor(hours / 24);
-  return `${days} 天前`;
+  return `${Math.floor(hours / 24)} 天前`;
 }
 
 function StatusBadge({ status }: { status: TaskStatus }) {
   const styles: Record<TaskStatus, string> = {
     completed: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
-    failed: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
-    processing: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
-    pending: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    failed:    'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
+    processing:'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
+    pending:   'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
   };
   const labels: Record<TaskStatus, string> = {
-    completed: '已完成',
-    failed: '失败',
-    processing: '处理中',
-    pending: '等待中',
+    completed: '已完成', failed: '失败', processing: '处理中', pending: '等待中',
   };
   return (
     <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', styles[status])}>
@@ -55,44 +52,50 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   );
 }
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({ task, onDelete }: { task: Task; onDelete: (id: string) => void }) {
   const [videoOpen, setVideoOpen] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const truncatedPrompt =
-    task.prompt.length > 50 ? task.prompt.slice(0, 50) + '…' : task.prompt;
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleting(true);
+    const res = await fetch(`/api/tasks?id=${task.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      onDelete(task.id);
+      toast.success('已删除');
+    } else {
+      toast.error('删除失败');
+    }
+    setDeleting(false);
+  };
+
+  const truncatedPrompt = task.prompt.length > 50 ? task.prompt.slice(0, 50) + '…' : task.prompt;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md">
+      {/* Delete button — shows on hover */}
+      <button
+        onClick={handleDelete}
+        disabled={deleting}
+        className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600 disabled:opacity-50"
+        title="删除"
+      >
+        {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+      </button>
+
       {/* Thumbnail */}
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
         {task.status === 'completed' && task.output_url ? (
           task.type === 'image' ? (
-            <button
-              className="h-full w-full"
-              onClick={() => setImageOpen(true)}
-              aria-label="查看原图"
-            >
-              <Image
-                src={task.output_url}
-                alt={task.prompt}
-                fill
+            <button className="h-full w-full" onClick={() => setImageOpen(true)}>
+              <Image src={task.output_url} alt={task.prompt} fill
                 className="object-cover transition-transform group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              />
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
             </button>
           ) : (
-            <button
-              className="relative h-full w-full"
-              onClick={() => setVideoOpen(true)}
-              aria-label="播放视频"
-            >
-              <video
-                src={task.output_url}
-                className="h-full w-full object-cover"
-                muted
-                playsInline
-              />
+            <button className="relative h-full w-full" onClick={() => setVideoOpen(true)}>
+              <video src={task.output_url} className="h-full w-full object-cover" muted playsInline />
               <span className="absolute inset-0 flex items-center justify-center bg-black/30">
                 <VideoIcon className="h-10 w-10 text-white drop-shadow" />
               </span>
@@ -104,16 +107,11 @@ function TaskCard({ task }: { task: Task }) {
           </div>
         ) : task.status === 'failed' ? (
           <div className="flex h-full flex-col items-center justify-center gap-1 text-muted-foreground">
-            <AlertCircle className="h-8 w-8" />
-            <span className="text-xs">生成失败</span>
+            <AlertCircle className="h-8 w-8" /><span className="text-xs">生成失败</span>
           </div>
         ) : (
           <div className="flex h-full items-center justify-center">
-            {task.type === 'image' ? (
-              <ImageIcon className="h-8 w-8 text-muted-foreground" />
-            ) : (
-              <VideoIcon className="h-8 w-8 text-muted-foreground" />
-            )}
+            {task.type === 'image' ? <ImageIcon className="h-8 w-8 text-muted-foreground" /> : <VideoIcon className="h-8 w-8 text-muted-foreground" />}
           </div>
         )}
       </div>
@@ -124,9 +122,7 @@ function TaskCard({ task }: { task: Task }) {
           <StatusBadge status={task.status} />
           <span className="text-xs text-muted-foreground">{relativeTime(task.created_at)}</span>
         </div>
-        <p className="text-sm text-foreground" title={task.prompt}>
-          {truncatedPrompt}
-        </p>
+        <p className="text-sm text-foreground" title={task.prompt}>{truncatedPrompt}</p>
         <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
           <span className="rounded bg-muted px-1.5 py-0.5 font-mono">{task.model}</span>
           <span>{task.credits_cost} 积分</span>
@@ -135,37 +131,24 @@ function TaskCard({ task }: { task: Task }) {
 
       {/* Image lightbox */}
       {imageOpen && task.output_url && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setImageOpen(false)}
-        >
-          <div className="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={task.output_url}
-              alt={task.prompt}
-              className="max-h-[90vh] max-w-[90vw] object-contain"
-            />
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setImageOpen(false)}>
+          <button className="absolute right-4 top-4 text-white" onClick={() => setImageOpen(false)}>
+            <X className="h-6 w-6" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={task.output_url} alt={task.prompt} className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
         </div>
       )}
 
-      {/* Video player modal */}
+      {/* Video modal */}
       {videoOpen && task.output_url && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setVideoOpen(false)}
-        >
-          <div className="max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg">
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <video
-              src={task.output_url}
-              className="max-h-[90vh] max-w-[90vw]"
-              controls
-              autoPlay
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setVideoOpen(false)}>
+          <button className="absolute right-4 top-4 text-white" onClick={() => setVideoOpen(false)}>
+            <X className="h-6 w-6" />
+          </button>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video src={task.output_url} className="max-h-[90vh] max-w-[90vw] rounded-lg"
+            controls autoPlay onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>
@@ -179,50 +162,55 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
-  const fetchTasks = useCallback(
-    async (tab: FilterTab, offset: number, replace: boolean) => {
-      if (offset === 0) setLoading(true);
-      else setLoadingMore(true);
-      setError(null);
+  const fetchTasks = useCallback(async (tab: FilterTab, offset: number, replace: boolean) => {
+    if (offset === 0) setLoading(true); else setLoadingMore(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ type: tab, limit: String(PAGE_SIZE), offset: String(offset) });
+      const res = await fetch(`/api/tasks?${params}`);
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? '加载失败');
+      const data = await res.json() as { tasks: Task[]; total: number };
+      setTotal(data.total);
+      setTasks(prev => replace ? data.tasks : [...prev, ...data.tasks]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载失败');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, []);
 
-      try {
-        const params = new URLSearchParams({
-          type: tab,
-          limit: String(PAGE_SIZE),
-          offset: String(offset),
-        });
-        const res = await fetch(`/api/tasks?${params}`);
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error((body as { error?: string }).error ?? '加载失败');
-        }
-        const data = (await res.json()) as { tasks: Task[]; total: number };
-        setTotal(data.total);
-        setTasks((prev) => (replace ? data.tasks : [...prev, ...data.tasks]));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '加载失败');
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    fetchTasks(activeTab, 0, true);
-  }, [activeTab, fetchTasks]);
+  useEffect(() => { fetchTasks(activeTab, 0, true); }, [activeTab, fetchTasks]);
 
   const handleTabChange = (tab: FilterTab) => {
     if (tab === activeTab) return;
     setActiveTab(tab);
     setTasks([]);
     setTotal(0);
+    setConfirmClear(false);
   };
 
-  const handleLoadMore = () => {
-    fetchTasks(activeTab, tasks.length, false);
+  const handleDelete = (id: string) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    setTotal(prev => prev - 1);
+  };
+
+  const handleClearAll = async () => {
+    if (!confirmClear) { setConfirmClear(true); return; }
+    setClearing(true);
+    setConfirmClear(false);
+    const res = await fetch(`/api/tasks?type=${activeTab}`, { method: 'DELETE' });
+    if (res.ok) {
+      setTasks([]);
+      setTotal(0);
+      toast.success('已清空');
+    } else {
+      toast.error('清空失败');
+    }
+    setClearing(false);
   };
 
   const tabs: { key: FilterTab; label: string }[] = [
@@ -233,24 +221,35 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">历史记录</h1>
-        <p className="mt-1 text-sm text-muted-foreground">查看你的图像和视频生成记录</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">历史记录</h1>
+          <p className="mt-1 text-sm text-muted-foreground">查看你的图像和视频生成记录</p>
+        </div>
+        {tasks.length > 0 && (
+          <button
+            onClick={handleClearAll}
+            disabled={clearing}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              confirmClear
+                ? 'bg-red-500 text-white hover:bg-red-600'
+                : 'border text-muted-foreground hover:border-red-400 hover:text-red-500'
+            )}
+          >
+            {clearing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {confirmClear ? '确认清空？' : '清空'}
+          </button>
+        )}
       </div>
 
       {/* Filter tabs */}
       <div className="flex gap-1 rounded-lg bg-muted p-1 w-fit">
         {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => handleTabChange(tab.key)}
-            className={cn(
-              'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-              activeTab === tab.key
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
+          <button key={tab.key} onClick={() => handleTabChange(tab.key)}
+            className={cn('rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+              activeTab === tab.key ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            )}>
             {tab.label}
           </button>
         ))}
@@ -258,13 +257,10 @@ export default function HistoryPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       ) : error ? (
         <div className="flex flex-col items-center gap-2 py-20 text-muted-foreground">
-          <AlertCircle className="h-8 w-8" />
-          <p>{error}</p>
+          <AlertCircle className="h-8 w-8" /><p>{error}</p>
         </div>
       ) : tasks.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
@@ -275,24 +271,25 @@ export default function HistoryPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+            {tasks.map(task => (
+              <TaskCard key={task.id} task={task} onDelete={handleDelete} />
             ))}
           </div>
-
           {tasks.length < total && (
             <div className="flex justify-center pt-2">
-              <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="inline-flex items-center gap-2 rounded-lg border bg-background px-6 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-muted disabled:opacity-50"
-              >
+              <button onClick={() => fetchTasks(activeTab, tasks.length, false)} disabled={loadingMore}
+                className="inline-flex items-center gap-2 rounded-lg border bg-background px-6 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-muted disabled:opacity-50">
                 {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loadingMore ? '加载中…' : `加载更多 (${total - tasks.length} 条)`}
               </button>
             </div>
           )}
         </>
+      )}
+
+      {/* Click outside to cancel confirm */}
+      {confirmClear && (
+        <div className="fixed inset-0 z-40" onClick={() => setConfirmClear(false)} />
       )}
     </div>
   );

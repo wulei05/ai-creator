@@ -261,13 +261,24 @@ export function ChatWindow() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
+            <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
               <div className="text-center">
-                <div className="text-4xl mb-3">💬</div>
-                <p className="text-sm">Start a conversation with {currentModelInfo?.label ?? model}</p>
-                {supportsVision && (
-                  <p className="text-xs mt-1 opacity-60">支持图片理解 — 点击 📎 上传图片</p>
-                )}
+                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl">💬</div>
+                <p className="font-medium">{currentModelInfo?.label ?? model}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {supportsVision ? '支持文字 · 图片理解' : '智能对话助手'}
+                </p>
+              </div>
+              <div className="grid w-full max-w-sm gap-2">
+                {['帮我写一封商务邮件', '解释一下量子计算', '推荐一个周末旅行计划'].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setInput(s)}
+                    className="rounded-xl border bg-muted/40 px-4 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
           ) : (
@@ -314,36 +325,15 @@ export function ChatWindow() {
         )}
 
         {/* Input area */}
-        <div className="border-t px-4 py-3">
-          <div className="flex gap-2 items-end">
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-            {supportsVision && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0 h-10 w-10"
-                disabled={isStreaming}
-                onClick={() => fileInputRef.current?.click()}
-                title="上传图片"
-              >
-                <Paperclip className="size-4" />
-              </Button>
-            )}
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="发送消息… (Enter 发送，Shift+Enter 换行)"
-              className="min-h-[44px] max-h-32 resize-none"
-              disabled={isStreaming}
-            />
-            {/* 模型选择下拉 */}
+        <div className="border-t px-3 py-3">
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+          {/* 模型 + 附件 工具栏 */}
+          <div className="mb-2 flex items-center gap-2">
             <select
               value={model}
               onChange={(e) => setModel(e.target.value as ChatModel)}
               disabled={isStreaming}
-              className="h-10 shrink-0 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 max-w-[120px]"
-              title="选择模型"
+              className="flex-1 rounded-lg border border-input bg-muted/40 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
             >
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -351,6 +341,29 @@ export function ChatWindow() {
                 </option>
               ))}
             </select>
+            {supportsVision && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                disabled={isStreaming}
+                onClick={() => fileInputRef.current?.click()}
+                title="上传图片"
+              >
+                <Paperclip className="size-3.5" />
+              </Button>
+            )}
+          </div>
+          {/* 输入行 */}
+          <div className="flex gap-2 items-end">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="发送消息…"
+              className="min-h-[44px] max-h-32 resize-none"
+              disabled={isStreaming}
+            />
             <Button
               onClick={sendMessage}
               disabled={(!input.trim() && !pendingImage) || isStreaming}

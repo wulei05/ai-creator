@@ -6,7 +6,9 @@ import { chatRateLimit } from '@/lib/ratelimit';
 // export const runtime = 'edge'; // Disabled locally — re-enable for Vercel production
 
 const VALID_MODELS: ChatModel[] = [
-  'gpt-4o', 'deepseek-chat', 'claude-sonnet-4-6',
+  'gpt-4o', 'deepseek-chat', 'deepseek-reasoner', 'claude-sonnet-4-6',
+  'grok-4', 'grok-3', 'grok-3-fast', 'grok-3-mini', 'grok-3-mini-fast',
+  'gemini-3.1-pro', 'gemini-3-pro', 'gemini-3-flash', 'gemini-3.1-flash-lite',
   'gemini-2.5-pro', 'gemini-2.5-flash',
   'gemini-2.0-flash', 'gemini-2.0-flash-lite',
   'gemini-1.5-pro', 'gemini-1.5-flash',

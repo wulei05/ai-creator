@@ -506,14 +506,12 @@ export default function VideoPage() {
 
   const uploadImage = async (): Promise<string> => {
     if (!imageFile) throw new Error('No image selected');
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-    const path = `${user.id}/video-inputs/${Date.now()}-${imageFile.name}`;
-    const { data, error } = await supabase.storage.from('task-uploads').upload(path, imageFile, { upsert: true });
-    if (error) throw new Error(`Upload failed: ${error.message}`);
-    const { data: { publicUrl } } = supabase.storage.from('task-uploads').getPublicUrl(data.path);
-    return publicUrl;
+    const form = new FormData();
+    form.append('file', imageFile);
+    const res = await fetch('/api/upload', { method: 'POST', body: form });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? 'Upload failed');
+    return json.url as string;
   };
 
   const pollStatus = async (taskId: string) => {
@@ -547,28 +545,31 @@ export default function VideoPage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) { toast.error('请输入描述词'); return; }
-    if (!imageFile) { toast.error('请上传参考图片'); return; }
     setLoading(true);
-    setUploading(true);
     setError(null);
     setGeneratedVideo(null);
-    let image_url: string;
-    try {
-      image_url = await uploadImage();
-    } catch (err) {
-      setLoading(false);
+
+    let image_url: string | undefined;
+    if (imageFile) {
+      setUploading(true);
+      try {
+        image_url = await uploadImage();
+      } catch (err) {
+        setLoading(false);
+        setUploading(false);
+        const msg = err instanceof Error ? err.message : 'Image upload failed';
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
       setUploading(false);
-      const msg = err instanceof Error ? err.message : 'Image upload failed';
-      setError(msg);
-      toast.error(msg);
-      return;
     }
-    setUploading(false);
+
     try {
       const res = await fetch('/api/ai/video/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim(), image_url, duration, aspect_ratio: aspectRatio, model: videoModel }),
+        body: JSON.stringify({ prompt: prompt.trim(), image_url, duration, aspect_ratio: aspectRatio, model: videoModel || 'kling-v2' }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -639,7 +640,7 @@ export default function VideoPage() {
           <Video className="size-6 text-primary" />
           AI 视频生成
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">上传参考图片，从模板选择运动方式，生成高质量视频</p>
+        <p className="text-muted-foreground text-sm mt-1">纯文字或上传参考图片，从模板选择运动方式，生成高质量视频</p>
       </div>
 
       {/* Template Gallery */}
@@ -732,7 +733,7 @@ export default function VideoPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Image Upload */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">参考图片</label>
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">参考图片 <span className="normal-case text-muted-foreground/60">（可选）</span></label>
             <div
               className={`relative border-2 border-dashed rounded-xl cursor-pointer transition-colors overflow-hidden ${
                 imagePreview ? 'border-primary/50' : 'hover:border-primary/50 border-border'
@@ -761,8 +762,9 @@ export default function VideoPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-4">
                   <Upload className="h-8 w-8 opacity-50" />
-                  <p className="text-sm font-medium">点击上传图片</p>
-                  <p className="text-xs opacity-70">JPG · PNG · WebP · 最大 10MB</p>
+                  <p className="text-sm font-medium">点击上传参考图片</p>
+                  <p className="text-xs opacity-70">可选 · JPG · PNG · WebP · 最大 10MB</p>
+                  <p className="text-xs opacity-50">不上传则使用纯文字生成</p>
                 </div>
               )}
             </div>
@@ -860,7 +862,7 @@ export default function VideoPage() {
         </Button>
 
         {!imageFile && !loading && (
-          <p className="text-xs text-center text-muted-foreground">↑ 请先上传参考图片</p>
+          <p className="text-xs text-center text-muted-foreground">不上传图片则使用纯文字生成视频</p>
         )}
 
         {error && (
@@ -899,7 +901,20 @@ export default function VideoPage() {
       {/* History */}
       {history.length > 0 && (
         <div className="space-y-3">
-          <h2 className="font-semibold text-sm text-muted-foreground">最近生成</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-sm text-muted-foreground">最近生成</h2>
+            <button
+              onClick={async () => {
+                if (!confirm('确认清空全部视频记录？')) return;
+                await fetch('/api/tasks?type=video', { method: 'DELETE' });
+                setHistory([]);
+                toast.success('已清空');
+              }}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              清空
+            </button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {history.map((item) => (
               <div
@@ -932,6 +947,19 @@ export default function VideoPage() {
                       )}
                     </div>
                   )}
+                  {/* 删除按钮 */}
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await fetch(`/api/tasks?id=${item.id}`, { method: 'DELETE' });
+                      setHistory(prev => prev.filter(h => h.id !== item.id));
+                      toast.success('已删除');
+                    }}
+                    className="absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all"
+                    title="删除"
+                  >
+                    <X className="size-3" />
+                  </button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1 px-0.5">{item.prompt}</p>
               </div>

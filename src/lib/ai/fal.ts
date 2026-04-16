@@ -55,3 +55,81 @@ export async function getFluxStatus(requestId: string) {
 export async function getFluxResult(requestId: string) {
   return fal.queue.result('fal-ai/flux-pro/v1.1', { requestId });
 }
+
+// ── Inpaint (flux-pro fill) ──────────────────────────────────
+const INPAINT_ENDPOINT = 'fal-ai/flux-pro/v1/fill';
+
+export async function submitInpaint(params: {
+  image_url: string;
+  mask_url: string;
+  prompt: string;
+}): Promise<string> {
+  fal.config({ credentials: await getConfig('FAL_KEY') });
+  const result = await fal.queue.submit(INPAINT_ENDPOINT, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input: {
+      image_url: params.image_url,
+      mask_url: params.mask_url,
+      prompt: params.prompt,
+      output_format: 'jpeg',
+    } as any,
+  });
+  return result.request_id;
+}
+
+export async function pollInpaintResult(requestId: string): Promise<string | null> {
+  fal.config({ credentials: await getConfig('FAL_KEY') });
+  for (let i = 0; i < 45; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const status = await fal.queue.status(INPAINT_ENDPOINT, { requestId, logs: false });
+    const s = (status as { status: string }).status;
+    if (s === 'COMPLETED') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await fal.queue.result(INPAINT_ENDPOINT, { requestId }) as any;
+      return result.data?.images?.[0]?.url ?? null;
+    }
+    if (s === 'FAILED') return null;
+  }
+  return null;
+}
+
+// ── Outpaint ─────────────────────────────────────────────────
+const OUTPAINT_ENDPOINT = 'fal-ai/image-apps-v2/outpaint';
+
+export async function submitOutpaint(params: {
+  image_url: string;
+  prompt?: string;
+  expand_left?: number;
+  expand_right?: number;
+  expand_top?: number;
+  expand_bottom?: number;
+}): Promise<string> {
+  fal.config({ credentials: await getConfig('FAL_KEY') });
+  const result = await fal.queue.submit(OUTPAINT_ENDPOINT, {
+    input: {
+      image_url: params.image_url,
+      prompt: params.prompt ?? '',
+      expand_left:   params.expand_left   ?? 256,
+      expand_right:  params.expand_right  ?? 256,
+      expand_top:    params.expand_top    ?? 0,
+      expand_bottom: params.expand_bottom ?? 0,
+    },
+  });
+  return result.request_id;
+}
+
+export async function pollOutpaintResult(requestId: string): Promise<string | null> {
+  fal.config({ credentials: await getConfig('FAL_KEY') });
+  for (let i = 0; i < 45; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const status = await fal.queue.status(OUTPAINT_ENDPOINT, { requestId, logs: false });
+    const s = (status as { status: string }).status;
+    if (s === 'COMPLETED') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await fal.queue.result(OUTPAINT_ENDPOINT, { requestId }) as any;
+      return result.data?.images?.[0]?.url ?? null;
+    }
+    if (s === 'FAILED') return null;
+  }
+  return null;
+}

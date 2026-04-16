@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { History, LogOut } from 'lucide-react'
+import { History, LogOut, Coins } from 'lucide-react'
 
 export function UserMenu({ user }: { user: User }) {
   const router = useRouter()
@@ -37,6 +37,10 @@ export function UserMenu({ user }: { user: User }) {
         <DropdownMenuItem onClick={() => router.push('/history')} className="cursor-pointer">
           <History className="mr-2 h-4 w-4" />
           历史记录
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push('/credits')} className="cursor-pointer">
+          <Coins className="mr-2 h-4 w-4" />
+          积分
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} variant="destructive" className="cursor-pointer">

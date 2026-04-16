@@ -26,7 +26,7 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
     } else {
-      router.push('/chat')
+      router.push('/home')
       router.refresh()
     }
     setLoading(false)

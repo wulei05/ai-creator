@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Download, ImageIcon, Loader2, Sparkles, Wand2, ChevronRight, Expand, Eraser, Scissors, ZoomIn } from 'lucide-react';
+import { Download, ImageIcon, Loader2, Sparkles, Wand2, ChevronRight, Expand, Eraser, Scissors, ZoomIn, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModels } from '@/lib/hooks/useModels';
 
@@ -642,6 +642,111 @@ export default function ImagePage() {
         </div>
       </div>
 
+      {/* 实用写真工具 */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Wand2 className="size-4 text-primary" />
+          <h2 className="font-semibold text-sm">实用写真</h2>
+          <span className="text-xs text-muted-foreground">点击自动填充生成参数</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            {
+              title: '证件照',
+              desc: '白/蓝/红底，职业证件',
+              prompt: 'professional ID photo portrait, clean white background, formal attire, sharp focus on face, even studio lighting, high resolution, photorealistic',
+              imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80',
+              aspect: '9:16',
+              emoji: '🪪',
+            },
+            {
+              title: '结婚照',
+              desc: '唯美浪漫婚纱写真',
+              prompt: 'romantic wedding couple portrait, elegant wedding dress, soft bokeh background with flowers, golden hour lighting, cinematic film style, ultra realistic',
+              imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=300&q=80',
+              aspect: '16:9',
+              emoji: '💍',
+            },
+            {
+              title: '职业写真',
+              desc: '商务形象，简历用照',
+              prompt: 'professional business portrait, confident smile, smart attire, modern office background, soft natural lighting, sharp and clean, photorealistic headshot',
+              imageUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&q=80',
+              aspect: '9:16',
+              emoji: '💼',
+            },
+            {
+              title: '艺术写真',
+              desc: '时尚大片，个人品牌',
+              prompt: 'artistic fashion portrait, editorial style, dramatic moody lighting, high fashion outfit, professional makeup, magazine cover quality, ultra detailed',
+              imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80',
+              aspect: '9:16',
+              emoji: '🎨',
+            },
+            {
+              title: '儿童写真',
+              desc: '萌娃百天、周岁纪念',
+              prompt: 'adorable baby portrait, soft pastel background, natural smile, warm gentle lighting, shallow depth of field, heartwarming, professional studio photo',
+              imageUrl: 'https://images.unsplash.com/photo-1492725764893-90b379c2b6e7?w=300&q=80',
+              aspect: '1:1',
+              emoji: '👶',
+            },
+            {
+              title: '全家福',
+              desc: '家庭合影，节日纪念',
+              prompt: 'happy family portrait, warm golden hour light, outdoor park setting, natural candid smiles, professional photography, sharp focus, heartwarming composition',
+              imageUrl: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=300&q=80',
+              aspect: '16:9',
+              emoji: '👨‍👩‍👧‍👦',
+            },
+            {
+              title: '毕业照',
+              desc: '学士服，纪念留影',
+              prompt: 'graduation portrait, academic gown and cap, university campus background, proud confident smile, professional photography, clear and sharp, celebratory atmosphere',
+              imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=300&q=80',
+              aspect: '9:16',
+              emoji: '🎓',
+            },
+            {
+              title: '旅行纪念',
+              desc: '风景人物，旅途记忆',
+              prompt: 'travel portrait at scenic location, person in foreground with stunning landscape background, natural light, candid joyful expression, travel photography style',
+              imageUrl: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&q=80',
+              aspect: '16:9',
+              emoji: '✈️',
+            },
+          ].map(({ title, desc, prompt: tplPrompt, imageUrl, aspect, emoji }) => (
+            <button
+              key={title}
+              onClick={() => {
+                setPrompt(tplPrompt);
+                const ar = aspect === '3:4' ? '9:16' : aspect === '4:3' ? '16:9' : aspect;
+                setAspectRatio(ar as AspectRatio);
+                formRef.current?.scrollIntoView({ behavior: 'smooth' });
+                toast.success(`已填充「${title}」参数`);
+              }}
+              className="group relative overflow-hidden rounded-xl border bg-card text-left transition-all hover:shadow-md hover:-translate-y-0.5"
+            >
+              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt={title}
+                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                <span className="absolute bottom-2 left-2 text-white text-xs font-semibold drop-shadow">{title}</span>
+                <span className="absolute top-2 right-2 text-lg drop-shadow">{emoji}</span>
+              </div>
+              <div className="p-2.5">
+                <p className="text-xs text-muted-foreground">{desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Template Gallery */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -824,7 +929,20 @@ export default function ImagePage() {
       {/* History */}
       {history.length > 0 && (
         <div className="space-y-3">
-          <h2 className="font-semibold text-sm text-muted-foreground">最近生成</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-sm text-muted-foreground">最近生成</h2>
+            <button
+              onClick={async () => {
+                if (!confirm('确认清空全部图像记录？')) return;
+                await fetch('/api/tasks?type=image', { method: 'DELETE' });
+                setHistory([]);
+                toast.success('已清空');
+              }}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              清空
+            </button>
+          </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
             {history.map((item) => (
               <div
@@ -849,16 +967,28 @@ export default function ImagePage() {
                       )}
                     </div>
                   )}
-                  {item.output_url && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                    {item.output_url && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDownload(item.output_url!); }}
                         className="bg-white/20 hover:bg-white/30 rounded-full p-1.5 transition-colors"
                       >
                         <Download className="size-3.5 text-white" />
                       </button>
-                    </div>
-                  )}
+                    )}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await fetch(`/api/tasks?id=${item.id}`, { method: 'DELETE' });
+                        setHistory(prev => prev.filter(h => h.id !== item.id));
+                        toast.success('已删除');
+                      }}
+                      className="bg-white/20 hover:bg-red-600 rounded-full p-1.5 transition-colors"
+                      title="删除"
+                    >
+                      <X className="size-3.5 text-white" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1 px-0.5">{item.prompt}</p>
               </div>
