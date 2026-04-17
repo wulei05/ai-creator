@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { stripCodeBlock, type WebTemplate } from '@/lib/ai/web-shared';
 import type { ModelInfo } from '@/app/api/models/route';
+import type { WebHistoryData } from '@/lib/studio-storage';
 
 const TEMPLATES: { id: WebTemplate; icon: string; name: string; desc: string }[] = [
   { id: 'math',    icon: '📐', name: '数学可视化', desc: '函数图像、几何动画' },
@@ -20,7 +21,12 @@ const TEMPLATES: { id: WebTemplate; icon: string; name: string; desc: string }[]
 
 type GenMode = 'idle' | 'generating' | 'done';
 
-export function WebToolTab() {
+interface WebToolTabProps {
+  pendingRestore?: WebHistoryData | null;
+  onRestoreConsumed?: () => void;
+}
+
+export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProps = {}) {
   const [template, setTemplate]       = useState<WebTemplate>('free');
   const [prompt, setPrompt]           = useState('');
   const [model, setModel]             = useState('');
@@ -48,6 +54,21 @@ export function WebToolTab() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!pendingRestore) return;
+    setPrompt(pendingRestore.prompt);
+    setTemplate(pendingRestore.template as WebTemplate);
+    if (pendingRestore.model) setModel(pendingRestore.model);
+    if (pendingRestore.html) {
+      setHtml(pendingRestore.html);
+      setMode('done');
+      updatePreview(pendingRestore.html);
+    }
+    if (pendingRestore.deployed_url) setDeployedUrl(pendingRestore.deployed_url);
+    onRestoreConsumed?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingRestore]);
 
   const updatePreview = useCallback((content: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
