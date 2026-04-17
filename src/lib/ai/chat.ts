@@ -36,8 +36,11 @@ function parseDataUrl(dataUrl: string): { mimeType: string; base64: string } {
 
 export async function* streamChat(
   model: ChatModel,
-  messages: Message[]
+  messages: Message[],
+  options?: { system?: string; maxTokens?: number }
 ): AsyncGenerator<string> {
+  const system = options?.system;
+  const maxTokens = options?.maxTokens ?? 4096;
   // ── Gemini ────────────────────────────────────────────────────────────────
   const GEMINI_CHAT_MODELS: ChatModel[] = [
     'gemini-3.1-pro', 'gemini-3-pro', 'gemini-3-flash', 'gemini-3.1-flash-lite',
@@ -56,7 +59,10 @@ export async function* streamChat(
   if (GEMINI_CHAT_MODELS.includes(model)) {
     const genAI = new GoogleGenerativeAI(await getConfig('GOOGLE_API_KEY'));
     const apiModelName = GEMINI_API_NAMES[model] ?? model;
-    const geminiModel = genAI.getGenerativeModel({ model: apiModelName });
+    const geminiModel = genAI.getGenerativeModel({
+      model: apiModelName,
+      ...(system ? { systemInstruction: system } : {}),
+    });
 
     // Convert history (all but last message)
     const history: Content[] = messages.slice(0, -1).map((m) => {
@@ -111,7 +117,8 @@ export async function* streamChat(
 
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: maxTokens,
+      ...(system ? { system } : {}),
       messages: claudeMessages,
     });
     for await (const chunk of stream) {
@@ -140,9 +147,11 @@ export async function* streamChat(
       return { role: m.role, content: m.content };
     });
 
+    const systemMsg: OpenAI.ChatCompletionMessageParam[] =
+      system ? [{ role: 'system', content: system }] : [];
     const stream = await client.chat.completions.create({
       model,
-      messages: openaiMessages,
+      messages: [...systemMsg, ...openaiMessages],
       stream: true,
     });
     for await (const chunk of stream) {
@@ -175,9 +184,11 @@ export async function* streamChat(
       }
       return { role: m.role, content: m.content };
     });
+    const systemMsg: OpenAI.ChatCompletionMessageParam[] =
+      system ? [{ role: 'system', content: system }] : [];
     const stream = await client.chat.completions.create({
       model: GROK_MODEL_MAP[model] ?? model,
-      messages: grokMessages,
+      messages: [...systemMsg, ...grokMessages],
       stream: true,
     });
     for await (const chunk of stream) {
@@ -197,7 +208,10 @@ export async function* streamChat(
     });
     const stream = await client.chat.completions.create({
       model: DEEPSEEK_MODEL_MAP[model] ?? 'deepseek-chat',
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      messages: [
+        ...(system ? [{ role: 'system' as const, content: system }] : []),
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
       stream: true,
     });
     for await (const chunk of stream) {
