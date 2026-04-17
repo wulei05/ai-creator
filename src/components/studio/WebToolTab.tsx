@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { stripCodeBlock, type WebTemplate } from '@/lib/ai/web';
+import { stripCodeBlock, type WebTemplate } from '@/lib/ai/web-shared';
 import type { ModelInfo } from '@/app/api/models/route';
 
 const TEMPLATES: { id: WebTemplate; icon: string; name: string; desc: string }[] = [

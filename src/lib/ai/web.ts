@@ -1,6 +1,5 @@
 import { streamChat, type ChatModel, type Message } from '@/lib/ai/chat';
-
-export type WebTemplate = 'math' | 'physics' | 'chart' | 'game' | 'tool' | 'free';
+export { type WebTemplate, stripCodeBlock } from '@/lib/ai/web-shared';
 
 const BASE_SYSTEM = `你是顶级前端工程师。生成一个完整的单文件 HTML，内嵌所有 CSS 和 JavaScript。
 要求：
@@ -23,10 +22,7 @@ const TEMPLATE_SYSTEM: Record<WebTemplate, string> = {
   free: BASE_SYSTEM,
 };
 
-/** 去除 AI 可能输出的 markdown 代码块包裹 */
-export function stripCodeBlock(text: string): string {
-  return text.replace(/^```(?:html)?\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-}
+import { type WebTemplate, stripCodeBlock } from '@/lib/ai/web-shared';
 
 export async function* streamWebHTML(
   model: ChatModel,
