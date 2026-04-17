@@ -9,6 +9,11 @@ import { cn } from '@/lib/utils';
 import { stripCodeBlock, type WebTemplate } from '@/lib/ai/web-shared';
 import type { ModelInfo } from '@/app/api/models/route';
 import type { WebHistoryData } from '@/lib/studio-storage';
+import { DraftBanner } from '@/components/studio/DraftBanner';
+import {
+  saveWebDraft, loadWebDraft, clearWebDraft, saveHistoryRecord,
+  type WebDraft,
+} from '@/lib/studio-storage';
 
 const TEMPLATES: { id: WebTemplate; icon: string; name: string; desc: string }[] = [
   { id: 'math',    icon: '📐', name: '数学可视化', desc: '函数图像、几何动画' },
@@ -37,6 +42,7 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
   const [showCode, setShowCode]       = useState(false);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [isDeploying, setIsDeploying] = useState(false);
+  const [webDraft, setWebDraft] = useState<WebDraft | null>(null);
 
   const iframeRef    = useRef<HTMLIFrameElement>(null);
   const abortRef     = useRef<AbortController | null>(null);
@@ -53,6 +59,10 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
         if (chatModels.length > 0) setModel(chatModels[0].id);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setWebDraft(loadWebDraft());
   }, []);
 
   useEffect(() => {
@@ -129,6 +139,14 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
       setHtml(finalHtml);
       updatePreview(finalHtml);
       setMode('done');
+      saveWebDraft({ prompt, template, model, html: finalHtml, deployed_url: null });
+      setWebDraft(null);
+      void saveHistoryRecord({
+        type: 'web',
+        title: prompt.slice(0, 60),
+        thumbnail: null,
+        data: { prompt, template, model, html: finalHtml, deployed_url: null } satisfies WebHistoryData,
+      });
     } catch (err) {
       if ((err as Error).name === 'AbortError') { setMode('idle'); return; }
       toast.error(err instanceof Error ? err.message : '生成失败');
@@ -151,6 +169,8 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
       if (!res.ok) throw new Error(data.error ?? '部署失败');
       setDeployedUrl(data.preview_url ?? null);
       toast.success('部署成功！');
+      const cur = loadWebDraft();
+      if (cur) saveWebDraft({ ...cur, deployed_url: data.preview_url ?? null });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '部署失败');
     } finally {
@@ -174,6 +194,29 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
     <div className="flex flex-col lg:flex-row gap-4 min-h-[600px]">
       {/* Left: Input */}
       <div className="lg:w-2/5 space-y-4 flex flex-col">
+        {webDraft && (
+          <DraftBanner
+            type="web"
+            draft={webDraft}
+            onRestore={(draft) => {
+              setPrompt(draft.prompt);
+              setTemplate(draft.template as WebTemplate);
+              if (draft.model) setModel(draft.model);
+              if (draft.html) {
+                setHtml(draft.html);
+                setMode('done');
+                setTimeout(() => updatePreview(draft.html), 100);
+              }
+              if (draft.deployed_url) setDeployedUrl(draft.deployed_url);
+              setWebDraft(null);
+              clearWebDraft();
+            }}
+            onDismiss={() => {
+              clearWebDraft();
+              setWebDraft(null);
+            }}
+          />
+        )}
         <div className="grid grid-cols-3 gap-2">
           {TEMPLATES.map(t => (
             <button key={t.id} onClick={() => setTemplate(t.id)}
