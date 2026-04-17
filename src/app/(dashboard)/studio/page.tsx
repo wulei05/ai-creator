@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { WebToolTab } from '@/components/studio/WebToolTab';
 
 type Tool = 'brush' | 'eraser';
 type Mode = 'upload' | 'editing' | 'processing' | 'result';
@@ -21,6 +22,7 @@ function getCanvasPoint(canvas: HTMLCanvasElement, clientX: number, clientY: num
 }
 
 export default function StudioPage() {
+  const [activeTab, setActiveTab] = useState<'image' | 'web'>('image');
   const [mode, setMode] = useState<Mode>('upload');
   const [tool, setTool] = useState<Tool>('brush');
   const [brushSize, setBrushSize] = useState(30);
@@ -173,68 +175,118 @@ export default function StudioPage() {
 
   // ── Upload view ──────────────────────────────────────────────
   if (mode === 'upload') return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Wand2 className="h-6 w-6 text-primary" /> 创作间</h1>
-        <p className="text-sm text-muted-foreground mt-1">上传图片，用 AI 画笔局部修改、扩展画面</p>
-      </div>
-      <div
-        className="rounded-2xl border-2 border-dashed border-border hover:border-primary/40 transition-colors cursor-pointer bg-muted/20"
-        onClick={() => fileInputRef.current?.click()}
-        onDragOver={e => e.preventDefault()}
-        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) loadImage(f); }}
-      >
-        <div className="flex flex-col items-center justify-center gap-4 py-20">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-            <ImageIcon className="h-8 w-8 text-primary" />
-          </div>
-          <div className="text-center">
-            <p className="font-semibold">点击上传或拖拽图片</p>
-            <p className="text-sm text-muted-foreground mt-1">JPG · PNG · WebP，或直接 Ctrl+V 粘贴</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-            <Upload className="mr-2 h-4 w-4" /> 选择文件
-          </Button>
-        </div>
-      </div>
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-      <div className="grid grid-cols-3 gap-3 text-center text-xs text-muted-foreground">
-        {[
-          { icon: '🖌️', label: '局部重绘', desc: '涂抹区域，描述想要的效果' },
-          { icon: '🔲', label: '扩展画面', desc: '向外延伸画面，无缝填充' },
-          { icon: '✨', label: 'AI 精修', desc: '用 AI 修改细节，保持整体一致' },
-        ].map(t => (
-          <div key={t.label} className="rounded-xl border bg-card p-4">
-            <div className="text-2xl mb-2">{t.icon}</div>
-            <div className="font-medium text-foreground text-sm">{t.label}</div>
-            <div className="mt-1">{t.desc}</div>
-          </div>
+    <div className={cn("mx-auto space-y-6", activeTab === 'web' ? "max-w-5xl" : "max-w-2xl")}>
+      {/* Tab switcher */}
+      <div className="flex rounded-xl border overflow-hidden w-fit">
+        {(['image', 'web'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={cn(
+              'px-4 py-2 text-sm font-medium transition-colors',
+              activeTab === tab
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}>
+            {tab === 'image' ? '🖼️ 图片编辑' : '🌐 网页工具'}
+          </button>
         ))}
       </div>
+      {activeTab === 'web' && <WebToolTab />}
+      {activeTab === 'image' && <>
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><Wand2 className="h-6 w-6 text-primary" /> 创作间</h1>
+          <p className="text-sm text-muted-foreground mt-1">上传图片，用 AI 画笔局部修改、扩展画面</p>
+        </div>
+        <div
+          className="rounded-2xl border-2 border-dashed border-border hover:border-primary/40 transition-colors cursor-pointer bg-muted/20"
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) loadImage(f); }}
+        >
+          <div className="flex flex-col items-center justify-center gap-4 py-20">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+              <ImageIcon className="h-8 w-8 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold">点击上传或拖拽图片</p>
+              <p className="text-sm text-muted-foreground mt-1">JPG · PNG · WebP，或直接 Ctrl+V 粘贴</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+              <Upload className="mr-2 h-4 w-4" /> 选择文件
+            </Button>
+          </div>
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+        <div className="grid grid-cols-3 gap-3 text-center text-xs text-muted-foreground">
+          {[
+            { icon: '🖌️', label: '局部重绘', desc: '涂抹区域，描述想要的效果' },
+            { icon: '🔲', label: '扩展画面', desc: '向外延伸画面，无缝填充' },
+            { icon: '✨', label: 'AI 精修', desc: '用 AI 修改细节，保持整体一致' },
+          ].map(t => (
+            <div key={t.label} className="rounded-xl border bg-card p-4">
+              <div className="text-2xl mb-2">{t.icon}</div>
+              <div className="font-medium text-foreground text-sm">{t.label}</div>
+              <div className="mt-1">{t.desc}</div>
+            </div>
+          ))}
+        </div>
+      </>}
     </div>
   );
 
   // ── Result view ──────────────────────────────────────────────
   if (mode === 'result' && resultUrl) return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <div className="flex items-center gap-3">
-        <button onClick={() => setMode('editing')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ChevronLeft className="h-4 w-4" /> 返回编辑
-        </button>
-        <h1 className="font-bold">生成结果</h1>
+    <div className={cn("mx-auto space-y-4", activeTab === 'web' ? "max-w-5xl" : "max-w-2xl")}>
+      {/* Tab switcher */}
+      <div className="flex rounded-xl border overflow-hidden w-fit">
+        {(['image', 'web'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={cn(
+              'px-4 py-2 text-sm font-medium transition-colors',
+              activeTab === tab
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}>
+            {tab === 'image' ? '🖼️ 图片编辑' : '🌐 网页工具'}
+          </button>
+        ))}
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={resultUrl} alt="result" className="w-full rounded-2xl border" />
-      <div className="flex gap-3">
-        <Button className="flex-1" onClick={useResult}><Sparkles className="mr-2 h-4 w-4" /> 继续编辑此图</Button>
-        <Button variant="outline" onClick={downloadResult}><Download className="mr-2 h-4 w-4" /> 下载</Button>
-      </div>
+      {activeTab === 'web' && <WebToolTab />}
+      {activeTab === 'image' && <>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setMode('editing')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ChevronLeft className="h-4 w-4" /> 返回编辑
+          </button>
+          <h1 className="font-bold">生成结果</h1>
+        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={resultUrl} alt="result" className="w-full rounded-2xl border" />
+        <div className="flex gap-3">
+          <Button className="flex-1" onClick={useResult}><Sparkles className="mr-2 h-4 w-4" /> 继续编辑此图</Button>
+          <Button variant="outline" onClick={downloadResult}><Download className="mr-2 h-4 w-4" /> 下载</Button>
+        </div>
+      </>}
     </div>
   );
 
   // ── Editing view ─────────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className={cn("mx-auto space-y-4", activeTab === 'web' ? "max-w-5xl" : "max-w-3xl")}>
+      {/* Tab switcher */}
+      <div className="flex rounded-xl border overflow-hidden w-fit">
+        {(['image', 'web'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={cn(
+              'px-4 py-2 text-sm font-medium transition-colors',
+              activeTab === tab
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}>
+            {tab === 'image' ? '🖼️ 图片编辑' : '🌐 网页工具'}
+          </button>
+        ))}
+      </div>
+      {activeTab === 'web' && <WebToolTab />}
+      {activeTab === 'image' && <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={() => setMode('upload')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -311,6 +363,7 @@ export default function StudioPage() {
           </Button>
         </div>
       </div>
+      </div>}
     </div>
   );
 }
