@@ -56,8 +56,18 @@ export async function getFluxResult(requestId: string) {
   return fal.queue.result('fal-ai/flux-pro/v1.1', { requestId });
 }
 
-// ── Inpaint (flux-pro fill) ──────────────────────────────────
-const INPAINT_ENDPOINT = 'fal-ai/flux-pro/v1/fill';
+// ── Inpaint (stable-diffusion inpainting — free tier) ────────
+const INPAINT_ENDPOINT = 'fal-ai/stable-diffusion-inpainting';
+
+/** Upload a base64 data URI to fal storage and return the CDN URL */
+async function uploadDataUri(dataUri: string): Promise<string> {
+  const [header, b64] = dataUri.split(',');
+  const mime = header.match(/:(.*?);/)?.[1] ?? 'image/jpeg';
+  const ext  = mime.split('/')[1] ?? 'jpg';
+  const buf  = Buffer.from(b64, 'base64');
+  const file = new File([buf], `upload.${ext}`, { type: mime });
+  return fal.storage.upload(file);
+}
 
 export async function submitInpaint(params: {
   image_url: string;
@@ -65,13 +75,16 @@ export async function submitInpaint(params: {
   prompt: string;
 }): Promise<string> {
   fal.config({ credentials: await getConfig('FAL_KEY') });
+  const [imageUrl, maskUrl] = await Promise.all([
+    uploadDataUri(params.image_url),
+    uploadDataUri(params.mask_url),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = await fal.queue.submit(INPAINT_ENDPOINT, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     input: {
-      image_url: params.image_url,
-      mask_url: params.mask_url,
+      image_url: imageUrl,
+      mask_url: maskUrl,
       prompt: params.prompt,
-      output_format: 'jpeg',
     } as any,
   });
   return result.request_id;
@@ -86,7 +99,7 @@ export async function pollInpaintResult(requestId: string): Promise<string | nul
     if (s === 'COMPLETED') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await fal.queue.result(INPAINT_ENDPOINT, { requestId }) as any;
-      return result.data?.images?.[0]?.url ?? null;
+      return result.data?.images?.[0]?.url ?? result.data?.image?.url ?? null;
     }
     if (s === 'FAILED') return null;
   }
@@ -105,9 +118,10 @@ export async function submitOutpaint(params: {
   expand_bottom?: number;
 }): Promise<string> {
   fal.config({ credentials: await getConfig('FAL_KEY') });
+  const imageUrl = await uploadDataUri(params.image_url);
   const result = await fal.queue.submit(OUTPAINT_ENDPOINT, {
     input: {
-      image_url: params.image_url,
+      image_url: imageUrl,
       prompt: params.prompt ?? '',
       expand_left:   params.expand_left   ?? 256,
       expand_right:  params.expand_right  ?? 256,

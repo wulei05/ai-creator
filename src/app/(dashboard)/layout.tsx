@@ -4,6 +4,7 @@ import { SidebarNav } from '@/components/dashboard/SidebarNav'
 import { BottomNav } from '@/components/dashboard/BottomNav'
 import { UserMenu } from '@/components/dashboard/UserMenu'
 import { Sparkles } from 'lucide-react'
+import { Toaster } from 'sonner'
 
 export default async function DashboardLayout({
   children,
@@ -38,6 +39,7 @@ export default async function DashboardLayout({
       </div>
       {/* 移动端底部导航 */}
       <BottomNav />
+      <Toaster richColors position="top-center" />
     </div>
   )
 }

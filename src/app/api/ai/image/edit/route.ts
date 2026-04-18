@@ -47,8 +47,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ output_url: outputUrl });
 
   } catch (err) {
+    console.error('Image edit error:', err instanceof Error ? err.message : err, err);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body = (err as any)?.body;
+    if (body?.detail?.includes('Exhausted balance')) {
+      return NextResponse.json({ error: 'AI 服务余额不足，请联系管理员充值后再试' }, { status: 503 });
+    }
+    if (body?.detail?.includes('locked')) {
+      return NextResponse.json({ error: `AI 服务暂时不可用：${body.detail}` }, { status: 503 });
+    }
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('Image edit error:', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
