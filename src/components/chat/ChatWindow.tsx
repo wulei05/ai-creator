@@ -8,6 +8,7 @@ import { CREDIT_COSTS } from '@/lib/pricing';
 import { Send, Plus, Loader2, Paperclip, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModels } from '@/lib/hooks/useModels';
+import { useAuthGate } from '@/lib/auth-gate';
 
 type ChatModel = 'gpt-4o' | 'deepseek-chat' | 'claude-sonnet-4-6' | 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash' | 'gemini-2.0-flash-lite' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
 type Message = { role: 'user' | 'assistant'; content: string; image?: string };
@@ -33,6 +34,7 @@ export function ChatWindow() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = useMemo(() => createClient(), []);
+  const { require } = useAuthGate();
 
   // Once models load, default to the first available one
   useEffect(() => {
@@ -97,6 +99,7 @@ export function ChatWindow() {
   };
 
   const sendMessage = async () => {
+    if (!require()) return;
     if ((!input.trim() && !pendingImage) || isStreaming) return;
 
     const userMessage: Message = {

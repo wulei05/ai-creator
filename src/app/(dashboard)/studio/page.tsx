@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { WebToolTab } from '@/components/studio/WebToolTab';
+import { useAuthGate } from '@/lib/auth-gate';
 import { History } from 'lucide-react';
 import { DraftBanner } from '@/components/studio/DraftBanner';
 import { HistoryPanel } from '@/components/studio/HistoryPanel';
@@ -41,6 +42,8 @@ export default function StudioPage() {
   const [showHistory, setShowHistory]         = useState(false);
   const [imageDraft, setImageDraft]           = useState<ImageDraft | null>(null);
   const [pendingWebRestore, setPendingWebRestore] = useState<WebHistoryData | null>(null);
+
+  const { require } = useAuthGate();
 
   const imageCanvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -191,11 +194,13 @@ export default function StudioPage() {
   };
 
   const handleInpaint = () => {
+    if (!require()) return;
     if (!prompt.trim()) { toast.error('请输入描述想要的效果'); return; }
     callEdit({ mode: 'inpaint', image_data: exportImage(), mask_data: exportMask(), prompt });
   };
 
   const handleOutpaint = () => {
+    if (!require()) return;
     const expand = expandDir === 'horizontal'
       ? { expand_left: 256, expand_right: 256, expand_top: 0, expand_bottom: 0 }
       : { expand_left: 0, expand_right: 0, expand_top: 256, expand_bottom: 256 };

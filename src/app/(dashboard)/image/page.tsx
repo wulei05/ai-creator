@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, ImageIcon, Loader2, Sparkles, Wand2, ChevronRight, Expand, Eraser, Scissors, ZoomIn, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModels } from '@/lib/hooks/useModels';
+import { useAuthGate } from '@/lib/auth-gate';
 
 type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3';
 
@@ -445,6 +446,7 @@ const NO_ASPECT_RATIO_MODELS = [
 
 export default function ImagePage() {
   const { models, loading: modelsLoading } = useModels('image');
+  const { require } = useAuthGate();
 
   const [prompt, setPrompt] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
@@ -516,6 +518,7 @@ export default function ImagePage() {
   };
 
   const handleGenerate = async () => {
+    if (!require()) return;
     if (!prompt.trim()) { toast.error('请输入描述词'); return; }
     setLoading(true);
     setError(null);

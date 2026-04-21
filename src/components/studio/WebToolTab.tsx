@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { stripCodeBlock, type WebTemplate } from '@/lib/ai/web-shared';
+import { useAuthGate } from '@/lib/auth-gate';
 import type { ModelInfo } from '@/app/api/models/route';
 import type { WebHistoryData } from '@/lib/studio-storage';
 import { DraftBanner } from '@/components/studio/DraftBanner';
@@ -43,6 +44,8 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [isDeploying, setIsDeploying] = useState(false);
   const [webDraft, setWebDraft] = useState<WebDraft | null>(null);
+
+  const { require } = useAuthGate();
 
   const iframeRef    = useRef<HTMLIFrameElement>(null);
   const abortRef     = useRef<AbortController | null>(null);
@@ -90,6 +93,7 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
   }, []);
 
   const handleGenerate = async () => {
+    if (!require()) return;
     if (!prompt.trim()) { toast.error('请输入描述'); return; }
     if (!model) { toast.error('请选择模型'); return; }
 

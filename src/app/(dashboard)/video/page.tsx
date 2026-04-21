@@ -11,6 +11,7 @@ import { Download, Video, Loader2, Upload, Sparkles, Wand2, Play, ChevronRight, 
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { useModels } from '@/lib/hooks/useModels';
+import { useAuthGate } from '@/lib/auth-gate';
 
 type AspectRatio = '16:9' | '9:16' | '1:1';
 type Duration = 5 | 10;
@@ -449,6 +450,7 @@ const MAX_POLL_DURATION = 5 * 60 * 1000;
 
 export default function VideoPage() {
   const { models, loading: modelsLoading } = useModels('video');
+  const { require } = useAuthGate();
 
   const [videoModel, setVideoModel] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -544,6 +546,7 @@ export default function VideoPage() {
   };
 
   const handleGenerate = async () => {
+    if (!require()) return;
     if (!prompt.trim()) { toast.error('请输入描述词'); return; }
     setLoading(true);
     setError(null);

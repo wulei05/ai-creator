@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuthGate } from '@/lib/auth-gate';
 import { Heart, MessageCircle, Share2, Bookmark, Search, TrendingUp, Sparkles, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -149,13 +150,17 @@ export default function CommunityPage() {
   const [activeTag, setActiveTag] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const { require } = useAuthGate();
+
   const toggleLike = (id: string) => {
+    if (!require()) return;
     setPosts(prev => prev.map(p =>
       p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
     ));
   };
 
   const toggleBookmark = (id: string) => {
+    if (!require()) return;
     setPosts(prev => prev.map(p =>
       p.id === id ? { ...p, bookmarked: !p.bookmarked } : p
     ));

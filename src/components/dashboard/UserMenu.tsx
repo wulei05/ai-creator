@@ -3,21 +3,32 @@
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
+import { useAuthGate } from '@/lib/auth-gate'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import { History, LogOut, Coins } from 'lucide-react'
 
-export function UserMenu({ user }: { user: User }) {
+export function UserMenu({ user }: { user: User | null }) {
   const router = useRouter()
   const supabase = createClient()
+  const { openModal } = useAuthGate()
 
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  if (!user) {
+    return (
+      <Button size="sm" onClick={openModal}>
+        登录
+      </Button>
+    )
   }
 
   const initials = user.email?.slice(0, 2).toUpperCase() ?? 'U'
