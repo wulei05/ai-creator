@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getKlingStatus } from '@/lib/ai/kling';
 import { getVeoStatus, isVeoModel } from '@/lib/ai/veo';
 import { getGrokVideoStatus } from '@/lib/ai/grok-video';
 import { getFalVideoStatus, isFalVideoModel } from '@/lib/ai/fal-video';
-import { getConfig } from '@/lib/config';
+import { reuploadVeoVideo } from '@/lib/ai/veo-reupload';
 
 export async function GET(
   _request: NextRequest,
@@ -86,36 +85,8 @@ export async function GET(
           return NextResponse.json({ status: 'failed', error: 'No video URL returned' });
         }
 
-        // Download from Google (temp URL) and re-upload to Supabase Storage
-        let publicUrl = veoStatus.videoUrl;
-        try {
-          const apiKey = await getConfig('GOOGLE_API_KEY');
-          const dlUrl = veoStatus.videoUrl.includes('?')
-            ? `${veoStatus.videoUrl}&key=${apiKey}`
-            : `${veoStatus.videoUrl}?key=${apiKey}`;
-          const videoRes = await fetch(dlUrl, { signal: AbortSignal.timeout(30_000) });
-          if (videoRes.ok) {
-            const buf = Buffer.from(await videoRes.arrayBuffer());
-            const adminSupabase = createAdminClient(
-              process.env.NEXT_PUBLIC_SUPABASE_URL!,
-              process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            );
-            const fileName = `videos/${user.id}/${task.id}.mp4`;
-            const { error: upErr } = await adminSupabase.storage
-              .from('ai-creations')
-              .upload(fileName, buf, { contentType: 'video/mp4', upsert: true });
-            if (!upErr) {
-              const { data: { publicUrl: storedUrl } } = adminSupabase.storage
-                .from('ai-creations').getPublicUrl(fileName);
-              publicUrl = storedUrl;
-            }
-          }
-        } catch (e) {
-          console.error('Veo video re-upload error:', e);
-          // Keep original Google URL as fallback
-        }
-
-        await supabase.from('tasks').update({ status: 'completed', output_url: publicUrl }).eq('id', task.id);
+        const publicUrl = await reuploadVeoVideo(veoStatus.videoUrl, user.id, task.id);
+        await supabase.from('tasks').update({ status: 'completed', output_url: publicUrl, completed_at: new Date().toISOString() }).eq('id', task.id);
         return NextResponse.json({ status: 'completed', output_url: publicUrl });
       }
 
