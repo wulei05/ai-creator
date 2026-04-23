@@ -63,8 +63,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await adminClient
     .from('app_config')
-    .update({ value, updated_at: new Date().toISOString() })
-    .eq('key', key);
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

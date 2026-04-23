@@ -30,6 +30,7 @@ const AI_KEYS = [
 ];
 
 const PAYMENT_KEYS = ['XUNHU_APPID', 'XUNHU_KEY'];
+const DEPLOY_KEYS = ['GITHUB_TOKEN'];
 
 export default function AdminPage() {
   const [configs, setConfigs] = useState<ConfigItem[]>([]);
@@ -93,7 +94,13 @@ export default function AdminPage() {
   }
 
   function renderGroup(title: string, keys: string[]) {
-    const items = configs.filter((c) => keys.includes(c.key));
+    const items = keys.map((key) => configs.find((c) => c.key === key) ?? {
+      key,
+      description: null,
+      masked_value: '',
+      has_value: false,
+      updated_at: '',
+    });
     return (
       <Card className="mb-6">
         <CardHeader>
@@ -182,6 +189,7 @@ export default function AdminPage() {
       <h2 className="text-2xl font-bold mb-6">API Key Management</h2>
       {renderGroup('AI APIs', AI_KEYS)}
       {renderGroup('Payment', PAYMENT_KEYS)}
+      {renderGroup('GitHub / 部署', DEPLOY_KEYS)}
     </div>
   );
 }
