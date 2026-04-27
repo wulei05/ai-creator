@@ -22,7 +22,16 @@ export type ChatModel =
   | 'gemini-2.0-flash'
   | 'gemini-2.0-flash-lite'
   | 'gemini-1.5-pro'
-  | 'gemini-1.5-flash';
+  | 'gemini-1.5-flash'
+  | 'qwen-max'
+  | 'qwen-plus'
+  | 'qwen-turbo'
+  | 'qwq-plus'
+  | 'glm-4-plus'
+  | 'glm-4-flash'
+  | 'glm-z1-plus'
+  | 'kimi-latest'
+  | 'kimi-thinking-preview';
 
 // image is a base64 data URL (e.g. "data:image/jpeg;base64,...")
 export type Message = { role: 'user' | 'assistant'; content: string; image?: string };
@@ -196,18 +205,75 @@ export async function* streamChat(
       if (content) yield content;
     }
 
-  // ── DeepSeek (text only) ──────────────────────────────────────────────────
-  } else {
-    const DEEPSEEK_MODEL_MAP: Partial<Record<ChatModel, string>> = {
-      'deepseek-chat':     'deepseek-chat',
-      'deepseek-reasoner': 'deepseek-reasoner',
-    };
+  // ── DeepSeek ─────────────────────────────────────────────────────────────
+  } else if (model === 'deepseek-chat' || model === 'deepseek-reasoner') {
     const client = new OpenAI({
       apiKey: await getConfig('DEEPSEEK_API_KEY'),
       baseURL: 'https://api.deepseek.com',
     });
     const stream = await client.chat.completions.create({
-      model: DEEPSEEK_MODEL_MAP[model] ?? 'deepseek-chat',
+      model,
+      messages: [
+        ...(system ? [{ role: 'system' as const, content: system }] : []),
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+      stream: true,
+    });
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) yield content;
+    }
+
+  // ── Qwen (通义千问) ────────────────────────────────────────────────────────
+  } else if (['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwq-plus'].includes(model)) {
+    const client = new OpenAI({
+      apiKey: await getConfig('QWEN_API_KEY'),
+      baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    });
+    const stream = await client.chat.completions.create({
+      model,
+      messages: [
+        ...(system ? [{ role: 'system' as const, content: system }] : []),
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+      stream: true,
+    });
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) yield content;
+    }
+
+  // ── Zhipu GLM (智谱) ───────────────────────────────────────────────────────
+  } else if (['glm-4-plus', 'glm-4-flash', 'glm-z1-plus'].includes(model)) {
+    const client = new OpenAI({
+      apiKey: await getConfig('ZHIPU_API_KEY'),
+      baseURL: 'https://open.bigmodel.cn/api/paas/v4',
+    });
+    const stream = await client.chat.completions.create({
+      model,
+      messages: [
+        ...(system ? [{ role: 'system' as const, content: system }] : []),
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+      stream: true,
+    });
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) yield content;
+    }
+
+  // ── Kimi (月之暗面) ────────────────────────────────────────────────────────
+  } else {
+    const KIMI_MODEL_MAP: Partial<Record<ChatModel, string>> = {
+      'kimi-latest':           'moonshot-v1-128k',
+      'kimi-thinking-preview': 'kimi-thinking-preview',
+    };
+    const client = new OpenAI({
+      apiKey: await getConfig('MOONSHOT_API_KEY'),
+      baseURL: 'https://api.moonshot.cn/v1',
+    });
+    const stream = await client.chat.completions.create({
+      model: KIMI_MODEL_MAP[model] ?? 'moonshot-v1-128k',
       messages: [
         ...(system ? [{ role: 'system' as const, content: system }] : []),
         ...messages.map((m) => ({ role: m.role, content: m.content })),

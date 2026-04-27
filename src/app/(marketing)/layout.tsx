@@ -19,7 +19,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </div>
         </nav>
       </header>
-      <main className="pt-[52px]">{children}</main>
+      <main className="pt-[61px]">{children}</main>
     </div>
   )
 }

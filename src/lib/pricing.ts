@@ -79,6 +79,18 @@ export const CREDIT_COSTS = {
   'gemini-3-flash':           1,
   'gemini-3.1-pro':           4,
   'gemini-3.1-flash-lite':    1,
+  // ── Qwen (通义千问) ──────────────────────────────────
+  'qwen-max':                  2,
+  'qwen-plus':                 1,
+  'qwen-turbo':                1,
+  'qwq-plus':                  2,
+  // ── Zhipu GLM (智谱) ────────────────────────────────
+  'glm-4-plus':                2,
+  'glm-4-flash':               1,
+  'glm-z1-plus':               2,
+  // ── Kimi (月之暗面) ──────────────────────────────────
+  'kimi-latest':               1,
+  'kimi-thinking-preview':     2,
 } as const
 
 export type ModelId = keyof typeof CREDIT_COSTS

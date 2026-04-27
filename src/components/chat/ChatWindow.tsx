@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useModels } from '@/lib/hooks/useModels';
 import { useAuthGate } from '@/lib/auth-gate';
 
-type ChatModel = 'gpt-4o' | 'deepseek-chat' | 'claude-sonnet-4-6' | 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash' | 'gemini-2.0-flash-lite' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
+type ChatModel = 'gpt-4o' | 'deepseek-chat' | 'deepseek-reasoner' | 'claude-sonnet-4-6' | 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash' | 'gemini-2.0-flash-lite' | 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'qwen-max' | 'qwen-plus' | 'qwen-turbo' | 'qwq-plus' | 'glm-4-plus' | 'glm-4-flash' | 'glm-z1-plus' | 'kimi-latest' | 'kimi-thinking-preview';
 type Message = { role: 'user' | 'assistant'; content: string; image?: string };
 
 interface Conversation {
@@ -23,7 +23,7 @@ interface Conversation {
 export function ChatWindow() {
   const { models, loading: modelsLoading } = useModels('chat');
 
-  const [model, setModel] = useState<ChatModel>('gpt-4o');
+  const [model, setModel] = useState<ChatModel>('deepseek-chat');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [pendingImage, setPendingImage] = useState<string | null>(null);
