@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { CREDIT_COSTS } from '@/lib/pricing';
 import { submitFluxImage } from '@/lib/ai/fal';
-import { generateGeminiImage, isGeminiImageModel } from '@/lib/ai/gemini-image';
+import { generateGeminiImage, isGeminiImageModel, isGeminiContentImageModel } from '@/lib/ai/gemini-image';
 import { generateGrokImage } from '@/lib/ai/grok-image';
 import { imageRateLimit } from '@/lib/ratelimit';
 
@@ -42,14 +42,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { prompt?: string; aspect_ratio?: string; model?: string };
+  let body: { prompt?: string; aspect_ratio?: string; model?: string; reference_images?: string[] };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { prompt, aspect_ratio = '1:1', model = 'flux-pro' } = body;
+  const { prompt, aspect_ratio = '1:1', model = 'flux-pro', reference_images = [] } = body;
 
   if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
     return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
@@ -62,6 +62,15 @@ export async function POST(request: NextRequest) {
   }
   if (!VALID_MODELS.includes(model as ImageModel)) {
     return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
+  }
+  if (!Array.isArray(reference_images)) {
+    return NextResponse.json({ error: 'reference_images must be an array' }, { status: 400 });
+  }
+  if (reference_images.length > 3) {
+    return NextResponse.json({ error: '最多上传 3 张参考图' }, { status: 400 });
+  }
+  if (reference_images.length > 0 && !isGeminiContentImageModel(model)) {
+    return NextResponse.json({ error: '该模型不支持参考图' }, { status: 400 });
   }
 
   const imageModel = model as ImageModel;
@@ -107,7 +116,7 @@ export async function POST(request: NextRequest) {
   // ── Gemini: synchronous generation ──────────────────────────────────────
   if (isGeminiImageModel(imageModel)) {
     try {
-      const base64Data = await generateGeminiImage(prompt.trim(), imageModel);
+      const base64Data = await generateGeminiImage(prompt.trim(), imageModel, reference_images);
 
       // Upload to Supabase Storage using service role
       const adminSupabase = createAdminClient(
