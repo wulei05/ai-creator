@@ -35,17 +35,22 @@ export function ImageWorkspace() {
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollStartRef = useRef<number>(0);
 
-  // 默认选中第一个模型
+  // 默认选中第一个可用模型
   useEffect(() => {
-    if (models.length > 0 && !models.find((m) => m.id === imageModel)) {
-      setImageModel(models[0].id);
+    if (models.length === 0) return;
+    const current = models.find((m) => m.id === imageModel);
+    if (!current || !current.available) {
+      const firstAvailable = models.find((m) => m.available);
+      if (firstAvailable) setImageModel(firstAvailable.id);
     }
   }, [models, imageModel]);
 
-  // 上传参考图后，若当前模型不支持，自动切到第一个支持的模型
+  // 上传参考图后，若当前模型不支持，自动切到第一个支持且可用的模型
   useEffect(() => {
     if (referenceImages.length > 0 && !REFERENCE_IMAGE_MODELS.includes(imageModel)) {
-      const supported = models.find((m) => REFERENCE_IMAGE_MODELS.includes(m.id));
+      const supported = models.find(
+        (m) => m.available && REFERENCE_IMAGE_MODELS.includes(m.id),
+      );
       if (supported) setImageModel(supported.id);
     }
   }, [referenceImages, imageModel, models]);

@@ -35,10 +35,13 @@ export function VideoWorkspace() {
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollStartRef = useRef<number>(0);
 
-  // 默认选中第一个模型
+  // 默认选中第一个可用模型
   useEffect(() => {
-    if (models.length > 0 && !models.find((m) => m.id === videoModel)) {
-      setVideoModel(models[0].id);
+    if (models.length === 0) return;
+    const current = models.find((m) => m.id === videoModel);
+    if (!current || !current.available) {
+      const firstAvailable = models.find((m) => m.available);
+      if (firstAvailable) setVideoModel(firstAvailable.id);
     }
   }, [models, videoModel]);
 

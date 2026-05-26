@@ -48,21 +48,32 @@ export function GenerationControls({
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">模型</label>
           <div className="grid grid-cols-2 gap-2">
             {models.map((m) => {
-              const unsupported = hasRefs && !REFERENCE_IMAGE_MODELS.includes(m.id);
+              const refMismatch = hasRefs && !REFERENCE_IMAGE_MODELS.includes(m.id);
+              const unavailable = !m.available;
+              const disabledClick = loading || refMismatch || unavailable;
+              const title = unavailable
+                ? '该模型尚未配置 API Key'
+                : refMismatch
+                  ? '该模型不支持参考图'
+                  : undefined;
               return (
                 <button
                   key={m.id}
-                  onClick={() => !unsupported && onModelChange(m.id)}
-                  disabled={loading || unsupported}
-                  title={unsupported ? '该模型不支持参考图' : undefined}
-                  className={`rounded-lg border p-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  onClick={() => !disabledClick && onModelChange(m.id)}
+                  disabled={disabledClick}
+                  title={title}
+                  className={`relative rounded-lg border p-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                     imageModel === m.id
                       ? 'border-primary bg-primary/5 shadow-sm'
                       : 'border-border hover:border-primary/40'
                   }`}
                 >
                   <div className="text-xs font-medium">{m.label}</div>
-                  <div className="text-xs text-muted-foreground">{m.credits} 积分</div>
+                  {unavailable ? (
+                    <div className="text-[10px] text-muted-foreground mt-0.5">暂未支持</div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">{m.credits} 积分</div>
+                  )}
                 </button>
               );
             })}

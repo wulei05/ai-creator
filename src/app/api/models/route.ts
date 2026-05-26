@@ -7,7 +7,10 @@ export interface ModelInfo {
   label: string;
   credits: number;
   vision?: boolean;
+  available: boolean;
 }
+
+type ModelDef = Omit<ModelInfo, 'available'>;
 
 export interface ModelsResponse {
   chat: ModelInfo[];
@@ -79,7 +82,7 @@ const MODEL_KEY_MAP: Record<string, string> = {
   'veo-3.1-lite':   'GOOGLE_API_KEY',
 };
 
-const ALL_CHAT_MODELS: ModelInfo[] = [
+const ALL_CHAT_MODELS: ModelDef[] = [
   { id: 'deepseek-chat',        label: 'DeepSeek V3',          credits: CREDIT_COSTS['deepseek-chat'],        vision: false },
   { id: 'deepseek-reasoner',    label: 'DeepSeek R1',          credits: CREDIT_COSTS['deepseek-reasoner'],    vision: false },
   { id: 'qwen-max',             label: '通义千问 Max',          credits: CREDIT_COSTS['qwen-max'],             vision: false },
@@ -110,7 +113,7 @@ const ALL_CHAT_MODELS: ModelInfo[] = [
   { id: 'gemini-1.5-flash',     label: 'Gemini 1.5 Flash',     credits: CREDIT_COSTS['gemini-1.5-flash'],     vision: true },
 ];
 
-const ALL_IMAGE_MODELS: ModelInfo[] = [
+const ALL_IMAGE_MODELS: ModelDef[] = [
   { id: 'gemini-3.1-flash-image', label: 'Nano Banana 2',        credits: CREDIT_COSTS['gemini-3.1-flash-image'] },
   { id: 'gemini-3-pro-image',     label: 'Nano Banana Pro',      credits: CREDIT_COSTS['gemini-3-pro-image'] },
   { id: 'gemini-2.5-flash-image', label: 'Nano Banana',          credits: CREDIT_COSTS['gemini-2.5-flash-image'] },
@@ -123,7 +126,7 @@ const ALL_IMAGE_MODELS: ModelInfo[] = [
   { id: 'flux-schnell',           label: 'Flux Schnell',         credits: CREDIT_COSTS['flux-schnell'] },
 ];
 
-const ALL_VIDEO_MODELS: ModelInfo[] = [
+const ALL_VIDEO_MODELS: ModelDef[] = [
   { id: 'seedance-2',      label: 'Seedance 2.0',        credits: CREDIT_COSTS['seedance-2'] },
   { id: 'seedance-2-fast', label: 'Seedance 2.0 Fast',   credits: CREDIT_COSTS['seedance-2-fast'] },
   { id: 'wan-2.2',         label: 'Wan 2.2',             credits: CREDIT_COSTS['wan-2.2'] },
@@ -162,12 +165,15 @@ export async function GET() {
     configuredKeys.has(key) ||
     (!!process.env[key] && !process.env[key]!.startsWith('your-'));
 
-  const filter = (models: ModelInfo[]) =>
-    models.filter((m) => isKeyAvailable(MODEL_KEY_MAP[m.id]));
+  const enrich = (models: ModelDef[]): ModelInfo[] =>
+    models.map((m) => ({
+      ...m,
+      available: isKeyAvailable(MODEL_KEY_MAP[m.id]),
+    }));
 
   return NextResponse.json({
-    chat:  filter(ALL_CHAT_MODELS),
-    image: filter(ALL_IMAGE_MODELS),
-    video: filter(ALL_VIDEO_MODELS),
+    chat:  enrich(ALL_CHAT_MODELS),
+    image: enrich(ALL_IMAGE_MODELS),
+    video: enrich(ALL_VIDEO_MODELS),
   } satisfies ModelsResponse);
 }

@@ -48,21 +48,29 @@ export function VideoControls({
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">模型</label>
           <div className="grid grid-cols-2 gap-2">
-            {models.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => onModelChange(m.id)}
-                disabled={loading}
-                className={`rounded-lg border p-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                  videoModel === m.id
-                    ? 'border-primary bg-primary/5 shadow-sm'
-                    : 'border-border hover:border-primary/40'
-                }`}
-              >
-                <div className="text-xs font-medium">{m.label}</div>
-                <div className="text-xs text-muted-foreground">{m.credits} 积分</div>
-              </button>
-            ))}
+            {models.map((m) => {
+              const unavailable = !m.available;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => !unavailable && onModelChange(m.id)}
+                  disabled={loading || unavailable}
+                  title={unavailable ? '该模型尚未配置 API Key' : undefined}
+                  className={`rounded-lg border p-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    videoModel === m.id
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border hover:border-primary/40'
+                  }`}
+                >
+                  <div className="text-xs font-medium">{m.label}</div>
+                  {unavailable ? (
+                    <div className="text-[10px] text-muted-foreground mt-0.5">暂未支持</div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">{m.credits} 积分</div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

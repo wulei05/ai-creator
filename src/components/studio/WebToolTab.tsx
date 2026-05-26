@@ -59,7 +59,8 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
       .then((data: { chat?: ModelInfo[] }) => {
         const chatModels = data.chat ?? [];
         setModels(chatModels);
-        if (chatModels.length > 0) setModel(chatModels[0].id);
+        const firstAvailable = chatModels.find((m) => m.available);
+        if (firstAvailable) setModel(firstAvailable.id);
       })
       .catch(() => {});
   }, []);
@@ -267,7 +268,9 @@ export function WebToolTab({ pendingRestore, onRestoreConsumed }: WebToolTabProp
         >
           {models.length === 0 && <option value="">加载模型中...</option>}
           {models.map(m => (
-            <option key={m.id} value={m.id}>{m.label} ({m.credits} 积分/K)</option>
+            <option key={m.id} value={m.id} disabled={!m.available}>
+              {m.label} {m.available ? `(${m.credits} 积分/K)` : '(暂未支持)'}
+            </option>
           ))}
         </select>
 

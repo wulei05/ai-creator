@@ -31,8 +31,11 @@ export function ChatWindow() {
   const { require } = useAuthGate();
 
   useEffect(() => {
-    if (models.length > 0 && !models.find((m) => m.id === model)) {
-      setModel(models[0].id);
+    if (models.length === 0) return;
+    const current = models.find((m) => m.id === model);
+    if (!current || !current.available) {
+      const firstAvailable = models.find((m) => m.available);
+      if (firstAvailable) setModel(firstAvailable.id);
     }
   }, [models, model]);
 
@@ -218,11 +221,16 @@ export function ChatWindow() {
               {models.map((m) => (
                 <DropdownMenuItem
                   key={m.id}
-                  onClick={() => setModel(m.id)}
-                  className="cursor-pointer flex items-center gap-2"
+                  onClick={() => m.available && setModel(m.id)}
+                  disabled={!m.available}
+                  className={`flex items-center gap-2 ${m.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
                 >
                   <span className="flex-1">{m.label}</span>
-                  <span className="text-xs text-muted-foreground">{m.credits}c</span>
+                  {m.available ? (
+                    <span className="text-xs text-muted-foreground">{m.credits}c</span>
+                  ) : (
+                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">暂未支持</span>
+                  )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
