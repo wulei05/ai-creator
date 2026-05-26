@@ -1,50 +1,55 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, Image, Video, LayoutDashboard, Coins, Sparkles, Users, Home } from 'lucide-react'
+import type { User } from '@supabase/supabase-js'
+import { Compass, MessageSquare, Image, Video, LayoutDashboard, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BalanceBadge } from '@/components/credits/BalanceBadge'
+import { UserMenu } from '@/components/dashboard/UserMenu'
 
 const navItems = [
-  { href: '/home',      icon: Home,            label: '首页' },
+  { href: '/explore',   icon: Compass,         label: '探索' },
   { href: '/chat',      icon: MessageSquare,   label: '会话' },
   { href: '/image',     icon: Image,           label: '图像' },
   { href: '/video',     icon: Video,           label: '视频' },
   { href: '/studio',    icon: LayoutDashboard, label: '创作室' },
   { href: '/community', icon: Users,           label: '社区' },
-  { href: '/credits',   icon: Coins,           label: '积分' },
 ]
 
-export function SidebarNav() {
+export function SidebarNav({ user }: { user: User | null }) {
   const pathname = usePathname()
 
   return (
-    <aside className="flex w-56 flex-col border-r bg-muted/30">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <Sparkles className="h-5 w-5 text-primary" />
-        <span className="font-semibold">AI Creator</span>
-      </div>
-      <div className="px-3 py-3">
-        <BalanceBadge />
-      </div>
-      <nav className="flex-1 space-y-1 px-3 py-2">
-        {navItems.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith(href)
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        ))}
+    <aside className="flex w-[88px] flex-col items-center bg-sidebar text-sidebar-foreground">
+      <Link href="/" className="flex h-14 w-full items-center justify-center">
+        <NextImage src="/logo.png" alt="IHuiToken" width={40} height={32} className="h-8 w-auto" priority />
+      </Link>
+
+      <nav className="flex flex-1 flex-col items-center gap-1 px-2 py-2">
+        {navItems.map(({ href, icon: Icon, label }) => {
+          const active = pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'flex w-full flex-col items-center gap-1 rounded-lg px-2 py-2.5 text-[11px] font-medium transition-colors',
+                active
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground',
+              )}
+            >
+              <Icon className={cn('h-5 w-5', active && 'stroke-[2.2px]')} />
+              <span>{label}</span>
+            </Link>
+          )
+        })}
       </nav>
+
+      <div className="flex w-full flex-col items-center gap-2 px-2 py-3">
+        <UserMenu user={user} />
+      </div>
     </aside>
   )
 }

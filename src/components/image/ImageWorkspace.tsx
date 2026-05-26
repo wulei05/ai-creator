@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModels } from '@/lib/hooks/useModels';
@@ -18,8 +19,9 @@ const MAX_POLL_DURATION = 3 * 60 * 1000;
 export function ImageWorkspace() {
   const { models, loading: modelsLoading } = useModels('image');
   const { require } = useAuthGate();
+  const searchParams = useSearchParams();
 
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(() => searchParams.get('prompt') ?? '');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
   const [imageModel, setImageModel] = useState('');
   const [referenceImages, setReferenceImages] = useState<string[]>([]);

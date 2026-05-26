@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -15,7 +14,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const router = useRouter()
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
   const supabase = createClient()
 
   async function handleRegister(e: React.FormEvent) {
@@ -23,7 +22,7 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -33,10 +32,35 @@ export default function RegisterPage() {
 
     if (error) {
       setError(error.message)
+    } else if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      // Supabase 对已注册邮箱返回 success 但 identities 为空（反枚举模糊响应）
+      setAlreadyRegistered(true)
     } else {
       setSuccess(true)
     }
     setLoading(false)
+  }
+
+  if (alreadyRegistered) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle>该邮箱已注册</CardTitle>
+            <CardDescription>
+              {email} 已是 IHuiToken 用户，请直接登录。
+              <br />
+              忘记密码可在登录页选择「忘记密码」重置。
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href={`/login?email=${encodeURIComponent(email)}`}>
+              <Button className="w-full">去登录</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (success) {
@@ -59,7 +83,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">注册</CardTitle>
-          <CardDescription>创建 AI Creator 账号</CardDescription>
+          <CardDescription>创建 IHuiToken 账号</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleRegister} className="space-y-4">

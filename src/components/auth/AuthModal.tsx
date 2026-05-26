@@ -19,6 +19,7 @@ export function AuthModal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [registered, setRegistered] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -27,6 +28,7 @@ export function AuthModal() {
     setPassword('');
     setError('');
     setRegistered(false);
+    setAlreadyRegistered(false);
   }
 
   function switchTab(t: 'login' | 'register') {
@@ -52,17 +54,30 @@ export function AuthModal() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `${window.location.origin}/api/auth/callback` },
     });
     if (error) {
       setError(error.message);
+    } else if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      // 已注册：Supabase 返回 success 但 identities 为空（反枚举）
+      setAlreadyRegistered(true);
     } else {
       setRegistered(true);
     }
     setLoading(false);
+  }
+
+  function goToLoginWithEmail() {
+    const keepEmail = email;
+    setTab('login');
+    setError('');
+    setPassword('');
+    setRegistered(false);
+    setAlreadyRegistered(false);
+    setEmail(keepEmail);
   }
 
   async function handleGoogle() {
@@ -77,7 +92,7 @@ export function AuthModal() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {tab === 'login' ? '登录' : '注册'} AI Creator
+            {tab === 'login' ? '登录' : '注册'} IHuiToken
           </DialogTitle>
         </DialogHeader>
 
@@ -96,7 +111,19 @@ export function AuthModal() {
           </button>
         </div>
 
-        {registered ? (
+        {alreadyRegistered ? (
+          <div className="space-y-4 py-2 text-center">
+            <p className="text-sm">
+              <span className="font-medium text-foreground">{email}</span> 已是 IHuiToken 用户。
+            </p>
+            <p className="text-xs text-muted-foreground">
+              请直接登录，忘记密码可在登录页选择「忘记密码」重置。
+            </p>
+            <Button className="w-full" onClick={goToLoginWithEmail}>
+              去登录
+            </Button>
+          </div>
+        ) : registered ? (
           <p className="text-sm text-center py-4 text-muted-foreground">
             验证邮件已发送到 {email}，请点击邮件中的链接完成注册。
           </p>

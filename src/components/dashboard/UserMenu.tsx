@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
@@ -16,6 +17,15 @@ export function UserMenu({ user }: { user: User | null }) {
   const router = useRouter()
   const supabase = createClient()
   const { openModal } = useAuthGate()
+  const [balance, setBalance] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/credits/balance')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && typeof d.balance === 'number') setBalance(d.balance) })
+      .catch(() => {})
+  }, [user])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -51,7 +61,10 @@ export function UserMenu({ user }: { user: User | null }) {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push('/credits')} className="cursor-pointer">
           <Coins className="mr-2 h-4 w-4" />
-          积分
+          <span className="flex-1">积分</span>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {balance === null ? '…' : balance}
+          </span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} variant="destructive" className="cursor-pointer">

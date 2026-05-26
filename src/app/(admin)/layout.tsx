@@ -45,7 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           ))}
         </nav>
         <div className="border-t p-3">
-          <Link href="/home" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
+          <Link href="/" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
             ← 返回主页
           </Link>
         </div>

@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, Image, Video, Users, Home, LayoutDashboard } from 'lucide-react'
+import { Compass, MessageSquare, Image, Video, Users, LayoutDashboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/home',      icon: Home,            label: '首页' },
+  { href: '/explore',   icon: Compass,         label: '探索' },
   { href: '/chat',      icon: MessageSquare,   label: '会话' },
   { href: '/image',     icon: Image,           label: '图像' },
   { href: '/video',     icon: Video,           label: '视频' },

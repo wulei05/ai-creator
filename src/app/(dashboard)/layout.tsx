@@ -1,10 +1,11 @@
+import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from '@/components/dashboard/SidebarNav'
 import { BottomNav } from '@/components/dashboard/BottomNav'
 import { UserMenu } from '@/components/dashboard/UserMenu'
 import { AuthGateProvider } from '@/lib/auth-gate'
 import { AuthModal } from '@/components/auth/AuthModal'
-import { Sparkles } from 'lucide-react'
 import { Toaster } from 'sonner'
 
 export default async function DashboardLayout({
@@ -20,15 +21,15 @@ export default async function DashboardLayout({
       <div className="flex h-screen bg-background">
         {/* 桌面侧边栏 */}
         <div className="hidden md:flex">
-          <SidebarNav />
+          <SidebarNav user={user} />
         </div>
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex h-14 items-center justify-between border-b px-4">
-            <div className="flex items-center gap-1.5 md:hidden">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="font-semibold text-sm">AI Creator</span>
-            </div>
-            <div className="hidden md:block" />
+          {/* 移动端顶栏：品牌 + 头像 */}
+          <header className="flex h-14 items-center justify-between border-b px-4 md:hidden">
+            <Link href="/" className="flex items-center gap-1.5">
+              <Image src="/logo.png" alt="IHuiToken" width={28} height={22} className="h-6 w-auto" priority />
+              <span className="font-semibold text-sm">IHuiToken</span>
+            </Link>
             <UserMenu user={user} />
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6 pb-16 md:pb-6">

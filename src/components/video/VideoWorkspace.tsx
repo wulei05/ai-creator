@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModels } from '@/lib/hooks/useModels';
@@ -15,9 +16,10 @@ const MAX_POLL_DURATION = 5 * 60 * 1000;
 export function VideoWorkspace() {
   const { models, loading: modelsLoading } = useModels('video');
   const { require } = useAuthGate();
+  const searchParams = useSearchParams();
 
   const [videoModel, setVideoModel] = useState('');
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(() => searchParams.get('prompt') ?? '');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
   const [duration, setDuration] = useState<Duration>(5);
   const [imageFile, setImageFile] = useState<File | null>(null);

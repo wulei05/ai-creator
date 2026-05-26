@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { CREDIT_COSTS } from '@/lib/pricing';
 
@@ -81,12 +80,6 @@ const MODEL_KEY_MAP: Record<string, string> = {
 };
 
 const ALL_CHAT_MODELS: ModelInfo[] = [
-  { id: 'gpt-4o',               label: 'GPT-4o',               credits: CREDIT_COSTS['gpt-4o'],               vision: true },
-  { id: 'grok-4',               label: 'Grok 4',               credits: CREDIT_COSTS['grok-4'],               vision: true },
-  { id: 'grok-3',               label: 'Grok 3',               credits: CREDIT_COSTS['grok-3'],               vision: true },
-  { id: 'grok-3-fast',          label: 'Grok 3 Fast',          credits: CREDIT_COSTS['grok-3-fast'],          vision: true },
-  { id: 'grok-3-mini',          label: 'Grok 3 Mini',          credits: CREDIT_COSTS['grok-3-mini'],          vision: false },
-  { id: 'grok-3-mini-fast',     label: 'Grok 3 Mini Fast',     credits: CREDIT_COSTS['grok-3-mini-fast'],     vision: false },
   { id: 'deepseek-chat',        label: 'DeepSeek V3',          credits: CREDIT_COSTS['deepseek-chat'],        vision: false },
   { id: 'deepseek-reasoner',    label: 'DeepSeek R1',          credits: CREDIT_COSTS['deepseek-reasoner'],    vision: false },
   { id: 'qwen-max',             label: '通义千问 Max',          credits: CREDIT_COSTS['qwen-max'],             vision: false },
@@ -98,6 +91,12 @@ const ALL_CHAT_MODELS: ModelInfo[] = [
   { id: 'glm-z1-plus',          label: 'GLM Z1 Plus（推理）',   credits: CREDIT_COSTS['glm-z1-plus'],          vision: false },
   { id: 'kimi-latest',          label: 'Kimi（128K）',          credits: CREDIT_COSTS['kimi-latest'],          vision: false },
   { id: 'kimi-thinking-preview',label: 'Kimi Thinking（推理）', credits: CREDIT_COSTS['kimi-thinking-preview'],vision: false },
+  { id: 'gpt-4o',               label: 'GPT-4o',               credits: CREDIT_COSTS['gpt-4o'],               vision: true },
+  { id: 'grok-4',               label: 'Grok 4',               credits: CREDIT_COSTS['grok-4'],               vision: true },
+  { id: 'grok-3',               label: 'Grok 3',               credits: CREDIT_COSTS['grok-3'],               vision: true },
+  { id: 'grok-3-fast',          label: 'Grok 3 Fast',          credits: CREDIT_COSTS['grok-3-fast'],          vision: true },
+  { id: 'grok-3-mini',          label: 'Grok 3 Mini',          credits: CREDIT_COSTS['grok-3-mini'],          vision: false },
+  { id: 'grok-3-mini-fast',     label: 'Grok 3 Mini Fast',     credits: CREDIT_COSTS['grok-3-mini-fast'],     vision: false },
   { id: 'claude-sonnet-4-6',    label: 'Claude Sonnet',        credits: CREDIT_COSTS['claude-sonnet-4-6'],    vision: true },
   { id: 'gemini-3.1-pro',       label: 'Gemini 3.1 Pro',       credits: CREDIT_COSTS['gemini-3.1-pro'],       vision: true },
   { id: 'gemini-3-pro',         label: 'Gemini 3 Pro',         credits: CREDIT_COSTS['gemini-3-pro'],         vision: true },
@@ -147,10 +146,6 @@ const ALL_VIDEO_MODELS: ModelInfo[] = [
 ];
 
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   const adminSupabase = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

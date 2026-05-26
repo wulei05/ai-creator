@@ -4,21 +4,16 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { createClient } from '@/lib/supabase/client';
-import { CREDIT_COSTS } from '@/lib/pricing';
-import { Send, Plus, Loader2, Paperclip, X } from 'lucide-react';
+import { ArrowUp, Loader2, Paperclip, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModels } from '@/lib/hooks/useModels';
 import { useAuthGate } from '@/lib/auth-gate';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-type ChatModel = 'gpt-4o' | 'deepseek-chat' | 'deepseek-reasoner' | 'claude-sonnet-4-6' | 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash' | 'gemini-2.0-flash-lite' | 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'qwen-max' | 'qwen-plus' | 'qwen-turbo' | 'qwq-plus' | 'glm-4-plus' | 'glm-4-flash' | 'glm-z1-plus' | 'kimi-latest' | 'kimi-thinking-preview';
+type ChatModel = string;
 type Message = { role: 'user' | 'assistant'; content: string; image?: string };
-
-interface Conversation {
-  id: string;
-  model: string;
-  messages: Message[];
-  created_at: string;
-}
 
 export function ChatWindow() {
   const { models, loading: modelsLoading } = useModels('chat');
@@ -29,61 +24,32 @@ export function ChatWindow() {
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [credits, setCredits] = useState<number | null>(null);
+  const [greetingName, setGreetingName] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = useMemo(() => createClient(), []);
   const { require } = useAuthGate();
 
-  // Once models load, default to the first available one
   useEffect(() => {
     if (models.length > 0 && !models.find((m) => m.id === model)) {
-      setModel(models[0].id as ChatModel);
+      setModel(models[0].id);
     }
   }, [models, model]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const loadConversations = useCallback(async () => {
-    const { data } = await supabase
-      .from('conversations')
-      .select('id, model, messages, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (data) setConversations(data as Conversation[]);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const name = user.user_metadata?.full_name
+        ?? user.user_metadata?.name
+        ?? user.email?.split('@')[0]
+        ?? '';
+      setGreetingName(name);
+    });
   }, [supabase]);
 
-  const loadCredits = useCallback(async () => {
-    const res = await fetch('/api/credits/balance');
-    if (res.ok) {
-      const data = await res.json();
-      setCredits(data.balance);
-    }
-  }, []);
-
   useEffect(() => {
-    loadConversations();
-    loadCredits();
-  }, [loadConversations, loadCredits]);
-
-  const loadConversation = (conv: Conversation) => {
-    setConversationId(conv.id);
-    setModel(conv.model as ChatModel);
-    setMessages(conv.messages);
-  };
-
-  const newConversation = () => {
-    setConversationId(undefined);
-    setMessages([]);
-    setPendingImage(null);
-  };
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -98,7 +64,7 @@ export function ChatWindow() {
     e.target.value = '';
   };
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!require()) return;
     if ((!input.trim() && !pendingImage) || isStreaming) return;
 
@@ -152,11 +118,7 @@ export function ChatWindow() {
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const payload = line.slice(6);
-          if (payload === '[DONE]') {
-            loadConversations();
-            loadCredits();
-            break;
-          }
+          if (payload === '[DONE]') break;
           try {
             const parsed = JSON.parse(payload);
             if (parsed.conversation_id) setConversationId(parsed.conversation_id);
@@ -182,7 +144,7 @@ export function ChatWindow() {
     } finally {
       setIsStreaming(false);
     }
-  };
+  }, [require, input, pendingImage, isStreaming, messages, model, conversationId, supabase]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -216,167 +178,122 @@ export function ChatWindow() {
     );
   }
 
-  return (
-    <div className="flex h-full gap-4">
-      {/* Sidebar - 移动端隐藏 */}
-      <div className="hidden md:flex w-52 flex-shrink-0 flex-col gap-2">
-        <Button variant="outline" className="w-full justify-start gap-2" onClick={newConversation}>
-          <Plus className="size-4" />
-          New Conversation
-        </Button>
-
-        {credits !== null && (
-          <div className="rounded-lg border p-3 text-center text-sm">
-            <div className="text-muted-foreground">Credits</div>
-            <div className="text-lg font-semibold">{credits}</div>
+  const inputBox = (
+    <div className="rounded-3xl bg-card/80 border border-border/60 px-4 py-3 shadow-sm">
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+      {pendingImage && (
+        <div className="mb-2 flex items-start gap-2">
+          <div className="relative inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pendingImage} alt="pending" className="h-16 w-16 rounded-lg object-cover border" />
+            <button
+              onClick={() => setPendingImage(null)}
+              className="absolute -top-1.5 -right-1.5 rounded-full bg-background border p-0.5 hover:bg-muted"
+            >
+              <X className="size-3" />
+            </button>
           </div>
-        )}
-
-        {conversations.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <div className="px-1 text-xs font-medium text-muted-foreground uppercase">Recent</div>
-            {conversations.map((conv) => {
-              const firstMsg = conv.messages?.[0];
-              const preview = firstMsg?.content?.slice(0, 30) ?? 'Conversation';
-              const convModelInfo = models.find((m) => m.id === conv.model);
-              return (
-                <button
-                  key={conv.id}
-                  onClick={() => loadConversation(conv)}
-                  className={cn(
-                    'rounded-lg px-3 py-2 text-left text-sm hover:bg-muted transition-colors',
-                    conversationId === conv.id && 'bg-muted font-medium'
-                  )}
+        </div>
+      )}
+      <Textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="随便问问…"
+        className="min-h-[44px] max-h-40 resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+        disabled={isStreaming}
+      />
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              disabled={isStreaming}
+              className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background/40 px-3 py-1 text-xs font-medium text-foreground hover:bg-background transition-colors disabled:opacity-50"
+            >
+              <span className="inline-block size-4 rounded-full bg-gradient-to-br from-violet-400 to-cyan-400" />
+              {currentModelInfo?.label ?? model}
+              <ChevronDown className="size-3 opacity-60" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-[60vh] overflow-y-auto">
+              {models.map((m) => (
+                <DropdownMenuItem
+                  key={m.id}
+                  onClick={() => setModel(m.id)}
+                  className="cursor-pointer flex items-center gap-2"
                 >
-                  <div className="truncate">{preview}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {convModelInfo?.label ?? conv.model}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Main chat area */}
-      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border bg-background">
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
-              <div className="text-center">
-                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl">💬</div>
-                <p className="font-medium">{currentModelInfo?.label ?? model}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {supportsVision ? '支持文字 · 图片理解' : '智能对话助手'}
-                </p>
-              </div>
-              <div className="grid w-full max-w-sm gap-2">
-                {['帮我写一封商务邮件', '解释一下量子计算', '推荐一个周末旅行计划'].map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setInput(s)}
-                    className="rounded-xl border bg-muted/40 px-4 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {messages.map((msg, i) => (
-                <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                  <div
-                    className={cn(
-                      'max-w-[75%] rounded-2xl px-4 py-2.5 text-sm',
-                      msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
-                    )}
-                  >
-                    {msg.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={msg.image} alt="attached" className="max-w-xs rounded-lg mb-2 object-contain" />
-                    )}
-                    {msg.content ? (
-                      <div className="whitespace-pre-wrap">{msg.content}</div>
-                    ) : (
-                      <Loader2 className="size-4 animate-spin" />
-                    )}
-                  </div>
-                </div>
+                  <span className="flex-1">{m.label}</span>
+                  <span className="text-xs text-muted-foreground">{m.credits}c</span>
+                </DropdownMenuItem>
               ))}
-              <div ref={messagesEndRef} />
-            </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {supportsVision && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="rounded-full"
+              disabled={isStreaming}
+              onClick={() => fileInputRef.current?.click()}
+              title="上传图片"
+            >
+              <Paperclip className="size-3.5" />
+            </Button>
           )}
         </div>
+        <Button
+          onClick={sendMessage}
+          disabled={(!input.trim() && !pendingImage) || isStreaming}
+          size="icon"
+          className="rounded-full size-9"
+        >
+          {isStreaming ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
+        </Button>
+      </div>
+    </div>
+  );
 
-        {/* Pending image preview */}
-        {pendingImage && (
-          <div className="border-t px-4 pt-3 flex items-start gap-2">
-            <div className="relative inline-block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={pendingImage} alt="pending" className="h-16 w-16 rounded-lg object-cover border" />
-              <button
-                onClick={() => setPendingImage(null)}
-                className="absolute -top-1.5 -right-1.5 rounded-full bg-background border p-0.5 hover:bg-muted"
+  // Empty state — centered greeting + input
+  if (messages.length === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-6 px-4 pb-8 sm:gap-8 sm:pb-12">
+        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
+          嗨{greetingName ? `, ${greetingName}` : ''}. 准备好开始了吗?
+        </h1>
+        <div className="w-full max-w-2xl">{inputBox}</div>
+      </div>
+    );
+  }
+
+  // Active conversation — messages stream above, input pinned bottom
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
+          {messages.map((msg, i) => (
+            <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+              <div
+                className={cn(
+                  'max-w-[75%] rounded-2xl px-4 py-2.5 text-sm',
+                  msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground'
+                )}
               >
-                <X className="size-3" />
-              </button>
+                {msg.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={msg.image} alt="attached" className="max-w-xs rounded-lg mb-2 object-contain" />
+                )}
+                {msg.content ? (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                ) : (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Input area */}
-        <div className="border-t px-3 py-3">
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-          {/* 模型 + 附件 工具栏 */}
-          <div className="mb-2 flex items-center gap-2">
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value as ChatModel)}
-              disabled={isStreaming}
-              className="flex-1 rounded-lg border border-input bg-muted/40 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-            >
-              {models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label} · {m.credits}c{m.vision ? ' 👁' : ''}
-                </option>
-              ))}
-            </select>
-            {supportsVision && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                disabled={isStreaming}
-                onClick={() => fileInputRef.current?.click()}
-                title="上传图片"
-              >
-                <Paperclip className="size-3.5" />
-              </Button>
-            )}
-          </div>
-          {/* 输入行 */}
-          <div className="flex gap-2 items-end">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="发送消息…"
-              className="min-h-[44px] max-h-32 resize-none"
-              disabled={isStreaming}
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={(!input.trim() && !pendingImage) || isStreaming}
-              size="icon"
-              className="h-10 w-10 shrink-0"
-            >
-              {isStreaming ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            </Button>
-          </div>
+          ))}
+          <div ref={messagesEndRef} />
         </div>
+      </div>
+      <div className="border-t bg-background/80 backdrop-blur">
+        <div className="mx-auto max-w-2xl px-4 py-3">{inputBox}</div>
       </div>
     </div>
   );
