@@ -16,8 +16,10 @@ async function getAuthenticatedAdmin() {
   return user;
 }
 
-function maskValue(value: string): string {
+function maskValue(key: string, value: string): string {
   if (!value) return '';
+  // URLs are not secrets — show in full so admins can verify the routing target
+  if (key.endsWith('_BASE_URL')) return value;
   if (value.length <= 4) return value.slice(0, 4) + '****';
   return value.slice(0, 4) + '****';
 }
@@ -40,7 +42,7 @@ export async function GET() {
   const result = (data ?? []).map((row) => ({
     key: row.key,
     description: row.description,
-    masked_value: maskValue(row.value),
+    masked_value: maskValue(row.key, row.value),
     has_value: Boolean(row.value),
     updated_at: row.updated_at,
   }));

@@ -66,8 +66,43 @@ export async function* streamChat(
   };
 
   if (GEMINI_CHAT_MODELS.includes(model)) {
-    const genAI = new GoogleGenerativeAI(await getConfig('GOOGLE_API_KEY'));
     const apiModelName = GEMINI_API_NAMES[model] ?? model;
+    const googleBaseUrl = await getConfig('GOOGLE_BASE_URL');
+
+    // When GOOGLE_BASE_URL is set, route through an OpenAI-compatible gateway
+    // (e.g. new-api / gptrouter). Otherwise use Google's native SDK.
+    if (googleBaseUrl) {
+      const client = new OpenAI({
+        apiKey: await getConfig('GOOGLE_API_KEY'),
+        baseURL: googleBaseUrl,
+      });
+      const geminiMessages = messages.map((m): OpenAI.ChatCompletionMessageParam => {
+        if (m.image && m.role === 'user') {
+          return {
+            role: 'user',
+            content: [
+              { type: 'image_url', image_url: { url: m.image, detail: 'auto' } },
+              { type: 'text', text: m.content },
+            ],
+          };
+        }
+        return { role: m.role, content: m.content };
+      });
+      const systemMsg: OpenAI.ChatCompletionMessageParam[] =
+        system ? [{ role: 'system', content: system }] : [];
+      const stream = await client.chat.completions.create({
+        model: apiModelName,
+        messages: [...systemMsg, ...geminiMessages],
+        stream: true,
+      });
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) yield content;
+      }
+      return;
+    }
+
+    const genAI = new GoogleGenerativeAI(await getConfig('GOOGLE_API_KEY'));
     const geminiModel = genAI.getGenerativeModel({
       model: apiModelName,
       ...(system ? { systemInstruction: system } : {}),
@@ -101,7 +136,11 @@ export async function* streamChat(
 
   // ── Claude ────────────────────────────────────────────────────────────────
   } else if (model === 'claude-sonnet-4-6') {
-    const anthropic = new Anthropic({ apiKey: await getConfig('ANTHROPIC_API_KEY') });
+    const anthropicBaseUrl = await getConfig('ANTHROPIC_BASE_URL');
+    const anthropic = new Anthropic({
+      apiKey: await getConfig('ANTHROPIC_API_KEY'),
+      ...(anthropicBaseUrl ? { baseURL: anthropicBaseUrl } : {}),
+    });
 
     const claudeMessages: Anthropic.MessageParam[] = messages.map((m) => {
       if (m.image && m.role === 'user') {
@@ -141,7 +180,11 @@ export async function* streamChat(
 
   // ── GPT-4o ────────────────────────────────────────────────────────────────
   } else if (model === 'gpt-4o') {
-    const client = new OpenAI({ apiKey: await getConfig('OPENAI_API_KEY') });
+    const openaiBaseUrl = await getConfig('OPENAI_BASE_URL');
+    const client = new OpenAI({
+      apiKey: await getConfig('OPENAI_API_KEY'),
+      ...(openaiBaseUrl ? { baseURL: openaiBaseUrl } : {}),
+    });
 
     const openaiMessages = messages.map((m): OpenAI.ChatCompletionMessageParam => {
       if (m.image && m.role === 'user') {
@@ -179,7 +222,7 @@ export async function* streamChat(
     };
     const client = new OpenAI({
       apiKey: await getConfig('XAI_API_KEY'),
-      baseURL: 'https://api.x.ai/v1',
+      baseURL: (await getConfig('XAI_BASE_URL')) || 'https://api.x.ai/v1',
     });
     const grokMessages = messages.map((m): OpenAI.ChatCompletionMessageParam => {
       if (m.image && m.role === 'user') {
@@ -209,7 +252,7 @@ export async function* streamChat(
   } else if (model === 'deepseek-chat' || model === 'deepseek-reasoner') {
     const client = new OpenAI({
       apiKey: await getConfig('DEEPSEEK_API_KEY'),
-      baseURL: 'https://api.deepseek.com',
+      baseURL: (await getConfig('DEEPSEEK_BASE_URL')) || 'https://api.deepseek.com',
     });
     const stream = await client.chat.completions.create({
       model,
@@ -228,7 +271,7 @@ export async function* streamChat(
   } else if (['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwq-plus'].includes(model)) {
     const client = new OpenAI({
       apiKey: await getConfig('QWEN_API_KEY'),
-      baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      baseURL: (await getConfig('QWEN_BASE_URL')) || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     });
     const stream = await client.chat.completions.create({
       model,
@@ -247,7 +290,7 @@ export async function* streamChat(
   } else if (['glm-4-plus', 'glm-4-flash', 'glm-z1-plus'].includes(model)) {
     const client = new OpenAI({
       apiKey: await getConfig('ZHIPU_API_KEY'),
-      baseURL: 'https://open.bigmodel.cn/api/paas/v4',
+      baseURL: (await getConfig('ZHIPU_BASE_URL')) || 'https://open.bigmodel.cn/api/paas/v4',
     });
     const stream = await client.chat.completions.create({
       model,
@@ -270,7 +313,7 @@ export async function* streamChat(
     };
     const client = new OpenAI({
       apiKey: await getConfig('MOONSHOT_API_KEY'),
-      baseURL: 'https://api.moonshot.cn/v1',
+      baseURL: (await getConfig('MOONSHOT_BASE_URL')) || 'https://api.moonshot.cn/v1',
     });
     const stream = await client.chat.completions.create({
       model: KIMI_MODEL_MAP[model] ?? 'moonshot-v1-128k',

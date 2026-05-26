@@ -20,20 +20,35 @@ type ConfigItem = {
 };
 
 const AI_KEYS = [
-  'FAL_KEY',
-  'KLING_API_KEY',
-  'OPENAI_API_KEY',
   'DEEPSEEK_API_KEY',
-  'ANTHROPIC_API_KEY',
-  'GOOGLE_API_KEY',
-  'XAI_API_KEY',
   'QWEN_API_KEY',
   'ZHIPU_API_KEY',
   'MOONSHOT_API_KEY',
+  'KLING_API_KEY',
+  'FAL_KEY',
+  'OPENAI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'GOOGLE_API_KEY',
+  'XAI_API_KEY',
+];
+
+const BASE_URL_KEYS = [
+  'OPENAI_BASE_URL',
+  'ANTHROPIC_BASE_URL',
+  'GOOGLE_BASE_URL',
+  'DEEPSEEK_BASE_URL',
+  'XAI_BASE_URL',
+  'QWEN_BASE_URL',
+  'ZHIPU_BASE_URL',
+  'MOONSHOT_BASE_URL',
 ];
 
 const PAYMENT_KEYS = ['XUNHU_APPID', 'XUNHU_KEY'];
 const DEPLOY_KEYS = ['GITHUB_TOKEN'];
+
+function isBaseUrlKey(key: string) {
+  return key.endsWith('_BASE_URL');
+}
 
 export default function AdminPage() {
   const [configs, setConfigs] = useState<ConfigItem[]>([]);
@@ -151,8 +166,12 @@ export default function AdminPage() {
                   {editingKey === item.key && (
                     <div className="flex items-center gap-2 mt-1">
                       <Input
-                        type="password"
-                        placeholder={`Enter new value for ${item.key}`}
+                        type={isBaseUrlKey(item.key) ? 'text' : 'password'}
+                        placeholder={
+                          isBaseUrlKey(item.key)
+                            ? `e.g. https://tokens.ihuitoken.com/v1 (empty = official)`
+                            : `Enter new value for ${item.key} (empty to clear)`
+                        }
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         className="flex-1 font-mono text-sm"
@@ -161,7 +180,7 @@ export default function AdminPage() {
                       <Button
                         size="sm"
                         onClick={() => handleSave(item.key)}
-                        disabled={saving || !editValue}
+                        disabled={saving}
                       >
                         {saving ? 'Saving…' : 'Save'}
                       </Button>
@@ -191,6 +210,7 @@ export default function AdminPage() {
     <div className="max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-6">API Key Management</h2>
       {renderGroup('AI APIs', AI_KEYS)}
+      {renderGroup('Provider Base URLs (optional · 留空走官方)', BASE_URL_KEYS)}
       {renderGroup('Payment', PAYMENT_KEYS)}
       {renderGroup('GitHub / 部署', DEPLOY_KEYS)}
     </div>
