@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/dashboard/BottomNav'
 import { UserMenu } from '@/components/dashboard/UserMenu'
 import { AuthGateProvider } from '@/lib/auth-gate'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { getSiteBranding } from '@/lib/site-branding'
 import { Toaster } from 'sonner'
 
 export default async function DashboardLayout({
@@ -15,20 +16,21 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const { logoUrl, siteName } = await getSiteBranding()
 
   return (
     <AuthGateProvider user={user}>
       <div className="flex h-screen bg-background">
         {/* 桌面侧边栏 */}
         <div className="hidden md:flex">
-          <SidebarNav user={user} />
+          <SidebarNav user={user} logoUrl={logoUrl} siteName={siteName} />
         </div>
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* 移动端顶栏：品牌 + 头像 */}
           <header className="flex h-14 items-center justify-between border-b px-4 md:hidden">
             <Link href="/" className="flex items-center gap-1.5">
-              <Image src="/logo.png" alt="IHuiToken" width={28} height={22} className="h-6 w-auto" priority />
-              <span className="font-semibold text-sm">IHuiToken</span>
+              <Image src={logoUrl} alt={siteName} width={28} height={22} className="h-6 w-auto" priority unoptimized={logoUrl.startsWith('http')} />
+              <span className="font-semibold text-sm">{siteName}</span>
             </Link>
             <UserMenu user={user} />
           </header>

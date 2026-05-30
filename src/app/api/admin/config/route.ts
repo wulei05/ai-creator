@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { invalidateConfigCache } from '@/lib/config';
@@ -18,8 +19,9 @@ async function getAuthenticatedAdmin() {
 
 function maskValue(key: string, value: string): string {
   if (!value) return '';
-  // URLs are not secrets — show in full so admins can verify the routing target
+  // Non-secret config values are returned in full so admins can verify them
   if (key.endsWith('_BASE_URL')) return value;
+  if (key.startsWith('SITE_')) return value;
   if (value.length <= 4) return value.slice(0, 4) + '****';
   return value.slice(0, 4) + '****';
 }
@@ -72,6 +74,12 @@ export async function POST(req: NextRequest) {
   }
 
   invalidateConfigCache();
+
+  // SITE_* keys feed into root/marketing/dashboard layouts — clear RSC cache so
+  // saved branding takes effect immediately rather than after the 5-min TTL.
+  if (key.startsWith('SITE_')) {
+    revalidatePath('/', 'layout');
+  }
 
   return NextResponse.json({ success: true });
 }

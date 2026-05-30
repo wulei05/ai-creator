@@ -107,18 +107,25 @@ const TESTIMONIALS = [
   { name: '周婷婷',   role: '品牌运营',       quote: '一个人撑起了公司全部社交媒体配图，月预算降了 80%。' },
 ]
 
-export function LandingContent() {
+export function LandingContent({
+  logoUrl = '/logo.png',
+  siteName = 'IHuiToken',
+}: {
+  logoUrl?: string
+  siteName?: string
+} = {}) {
   return (
     <div className="overflow-x-hidden">
       {/* Hero */}
       <section className="relative flex flex-col items-center justify-center px-4 pt-16 pb-12 text-center sm:pt-24">
         <Image
-          src="/logo.png"
-          alt="IHuiToken"
+          src={logoUrl}
+          alt={siteName}
           width={96}
           height={76}
           className="mb-6 h-16 w-auto sm:h-20"
           priority
+          unoptimized={logoUrl.startsWith('http')}
         />
 
         <h1 className="mb-6 text-4xl font-bold leading-[1.2] tracking-tight sm:text-5xl lg:text-6xl">

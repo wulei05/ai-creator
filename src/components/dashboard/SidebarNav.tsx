@@ -17,13 +17,29 @@ const navItems = [
   { href: '/community', icon: Users,           label: '社区' },
 ]
 
-export function SidebarNav({ user }: { user: User | null }) {
+export function SidebarNav({
+  user,
+  logoUrl = '/logo.png',
+  siteName = 'IHuiToken',
+}: {
+  user: User | null
+  logoUrl?: string
+  siteName?: string
+}) {
   const pathname = usePathname()
 
   return (
     <aside className="flex w-[88px] flex-col items-center bg-sidebar text-sidebar-foreground">
       <Link href="/" className="flex h-14 w-full items-center justify-center">
-        <NextImage src="/logo.png" alt="IHuiToken" width={40} height={32} className="h-8 w-auto" priority />
+        <NextImage
+          src={logoUrl}
+          alt={siteName}
+          width={40}
+          height={32}
+          className="h-8 w-auto"
+          priority
+          unoptimized={logoUrl.startsWith('http')}
+        />
       </Link>
 
       <nav className="flex flex-1 flex-col items-center gap-1 px-2 py-2">

@@ -182,7 +182,7 @@ export function ChatWindow() {
   }
 
   const inputBox = (
-    <div className="rounded-3xl bg-card/80 border border-border/60 px-4 py-3 shadow-sm">
+    <div className="rounded-3xl bg-card/80 border border-border/60 px-5 py-4 shadow-sm">
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
       {pendingImage && (
         <div className="mb-2 flex items-start gap-2">
@@ -203,7 +203,7 @@ export function ChatWindow() {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="随便问问…"
-        className="min-h-[44px] max-h-40 resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+        className="min-h-[40px] max-h-40 resize-none border-0 bg-transparent px-1 py-1 shadow-none focus-visible:ring-0"
         disabled={isStreaming}
       />
       <div className="mt-2 flex items-center justify-between gap-2">

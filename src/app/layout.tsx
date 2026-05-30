@@ -1,12 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { getSiteBranding } from "@/lib/site-branding";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "IHuiToken",
-  description: "AI 创作平台",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { siteName, faviconUrl } = await getSiteBranding();
+  return {
+    title: siteName,
+    description: "AI 创作平台",
+    icons: faviconUrl !== "/favicon.ico" ? { icon: faviconUrl } : undefined,
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

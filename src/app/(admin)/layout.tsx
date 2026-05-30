@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Settings, Users, ScrollText, LayoutDashboard } from 'lucide-react';
+import { Settings, Users, ScrollText, LayoutDashboard, Palette } from 'lucide-react';
 
 const NAV = [
-  { href: '/admin',       label: '概览',   icon: LayoutDashboard },
-  { href: '/admin/users', label: '用户管理', icon: Users },
-  { href: '/admin/logs',  label: '使用日志', icon: ScrollText },
-  { href: '/admin/config',label: 'API 配置', icon: Settings },
+  { href: '/admin',          label: '概览',     icon: LayoutDashboard },
+  { href: '/admin/users',    label: '用户管理', icon: Users },
+  { href: '/admin/logs',     label: '使用日志', icon: ScrollText },
+  { href: '/admin/config',   label: 'API 配置', icon: Settings },
+  { href: '/admin/branding', label: '站点品牌', icon: Palette },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
