@@ -30,6 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local agent runtime
+/.claude/scheduled_tasks.lock
+/.claude/worktrees/
+/.omx/logs/
+/.omx/state/
+/.omx/metrics.json
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
