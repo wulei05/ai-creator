@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useAuthGate } from '@/lib/auth-gate';
-import { Heart, MessageCircle, Share2, Bookmark, Search, TrendingUp, Sparkles, Clock } from 'lucide-react';
+import { Heart, MessageCircle, Copy, Bookmark, Search, TrendingUp, Sparkles, Clock, X, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import {
+  Dialog, DialogContent, DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Post {
   id: string;
@@ -149,6 +152,7 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState('hot');
   const [activeTag, setActiveTag] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
+  const [lightboxPost, setLightboxPost] = useState<Post | null>(null);
 
   const { require } = useAuthGate();
 
@@ -174,8 +178,70 @@ export default function CommunityPage() {
     return matchTag && matchSearch;
   });
 
+  const copyPrompt = (prompt: string) => {
+    navigator.clipboard.writeText(prompt);
+    toast.success('提示词已复制');
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-5">
+      {/* 图片灯箱 */}
+      <Dialog open={!!lightboxPost} onOpenChange={(open) => !open && setLightboxPost(null)}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-card border-border/60">
+          <DialogTitle className="sr-only">
+            {lightboxPost?.prompt.slice(0, 40)}
+          </DialogTitle>
+          {lightboxPost && (
+            <div className="flex flex-col sm:flex-row">
+              {/* 图片区 */}
+              <div className="relative flex-1 bg-black/60 min-h-[260px] sm:min-h-[400px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={lightboxPost.imageUrl}
+                  alt={lightboxPost.prompt.slice(0, 40)}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {/* 信息区 */}
+              <div className="flex flex-col gap-4 p-5 sm:w-[220px] shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+                    {lightboxPost.author.initials}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{lightboxPost.author.name}</p>
+                    <p className="text-xs text-muted-foreground">{lightboxPost.createdAt}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">模型</p>
+                  <p className="text-sm">{lightboxPost.model}</p>
+                </div>
+                <div className="flex-1">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">提示词</p>
+                  <p className="text-xs leading-relaxed text-foreground/80 line-clamp-6">{lightboxPost.prompt}</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => copyPrompt(lightboxPost.prompt)}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-primary/15 hover:bg-primary/25 text-primary px-3 py-2 text-xs font-medium transition-colors"
+                  >
+                    <Copy className="size-3.5" />
+                    复制提示词
+                  </button>
+                  <a
+                    href={`/image?prompt=${encodeURIComponent(lightboxPost.prompt)}`}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <Wand2 className="size-3.5" />
+                    用此提示词生图
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -237,23 +303,28 @@ export default function CommunityPage() {
         {filtered.map(post => (
           <div key={post.id} className="group flex flex-col rounded-xl border bg-card overflow-hidden hover:shadow-lg transition-all">
             {/* Image area */}
-            <div className={`relative aspect-square bg-gradient-to-br ${post.gradient} overflow-hidden`}>
+            <button
+              type="button"
+              onClick={() => setLightboxPost(post)}
+              className={`relative aspect-square bg-gradient-to-br ${post.gradient} overflow-hidden w-full text-left`}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={post.imageUrl}
                 alt={post.prompt.slice(0, 30)}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                <p className="text-white text-[10px] line-clamp-3 leading-relaxed">{post.prompt}</p>
+              {/* Hover overlay — 展示提示词 */}
+              <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2.5 gap-1">
+                <p className="text-white text-[10px] line-clamp-4 leading-relaxed">{post.prompt}</p>
+                <span className="text-white/50 text-[9px]">点击查看大图</span>
               </div>
               {/* Model badge */}
               <div className="absolute top-2 left-2 rounded-full bg-black/50 backdrop-blur px-2 py-0.5 text-[9px] text-white font-medium">
                 {post.model}
               </div>
-            </div>
+            </button>
 
             {/* Info */}
             <div className="p-2.5 space-y-2">
@@ -299,11 +370,11 @@ export default function CommunityPage() {
                     <Bookmark className={cn('size-3.5', post.bookmarked && 'fill-current')} />
                   </button>
                   <button
-                    onClick={() => { navigator.clipboard.writeText(post.prompt); toast.success('Prompt 已复制'); }}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    title="复制 Prompt"
+                    onClick={() => copyPrompt(post.prompt)}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    title="复制提示词"
                   >
-                    <Share2 className="size-3.5" />
+                    <Copy className="size-3.5" />
                   </button>
                 </div>
               </div>

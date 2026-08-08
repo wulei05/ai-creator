@@ -217,7 +217,7 @@ export function ChatWindow() {
               {currentModelInfo?.label ?? model}
               <ChevronDown className="size-3 opacity-60" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-[60vh] overflow-y-auto">
+            <DropdownMenuContent align="start" className="max-h-[60vh] min-w-[260px] overflow-y-auto">
               {models.map((m) => (
                 <DropdownMenuItem
                   key={m.id}

@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Languages } from 'lucide-react';
+import { toast } from 'sonner';
 import type { ModelInfo } from '@/lib/hooks/useModels';
 import { ReferenceUploader } from './ReferenceUploader';
 import {
@@ -34,6 +36,27 @@ export function GenerationControls({
   loading, creditCost, error, onGenerate,
 }: GenerationControlsProps) {
   const hasRefs = referenceImages.length > 0;
+  const [translating, setTranslating] = useState(false);
+
+  const handleTranslate = async () => {
+    if (!prompt.trim()) { toast.error('请先输入描述词'); return; }
+    setTranslating(true);
+    try {
+      const res = await fetch('/api/ai/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: prompt }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.translated) throw new Error(data.error ?? '翻译失败');
+      onPromptChange(data.translated);
+      toast.success('已翻译为英文提示词');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '翻译失败，请稍后重试');
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4 p-4 md:h-full md:overflow-y-auto">
@@ -95,10 +118,22 @@ export function GenerationControls({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">描述词 Prompt</label>
-          <span className="text-xs text-muted-foreground">{prompt.length}/1000</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{prompt.length}/1000</span>
+            <button
+              type="button"
+              onClick={handleTranslate}
+              disabled={loading || translating || !prompt.trim()}
+              title="AI 翻译为英文（英文提示词效果更佳）"
+              className="flex items-center gap-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {translating ? <Loader2 className="size-3 animate-spin" /> : <Languages className="size-3" />}
+              AI 翻译
+            </button>
+          </div>
         </div>
         <Textarea
-          placeholder="描述你想要生成的图像，例如：a serene mountain lake at sunset, photorealistic, 8k..."
+          placeholder="支持中文描述，点击「AI 翻译」转为英文效果更佳。例如：日落时分宁静的山中湖泊，写实摄影风格..."
           value={prompt}
           onChange={(e) => onPromptChange(e.target.value.slice(0, 1000))}
           rows={5}

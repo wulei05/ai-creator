@@ -102,18 +102,6 @@ export function MarketingNav() {
         </div>
       </NavDropdown>
 
-      <NavDropdown label="图片生成">
-        <div className="w-[320px] rounded-2xl border border-border bg-popover p-4 shadow-xl">
-          <MenuColumn title="图片生成" items={IMAGE_ITEMS} />
-        </div>
-      </NavDropdown>
-
-      <NavDropdown label="视频创作">
-        <div className="w-[320px] rounded-2xl border border-border bg-popover p-4 shadow-xl">
-          <MenuColumn title="视频创作" items={VIDEO_ITEMS} />
-        </div>
-      </NavDropdown>
-
       <a
         href="/community"
         className="rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
@@ -122,7 +110,7 @@ export function MarketingNav() {
       </a>
 
       <a
-        href="/#pricing"
+        href="/pricing"
         className="flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card/60 transition-colors"
       >
         价格方案

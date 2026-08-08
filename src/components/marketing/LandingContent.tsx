@@ -487,7 +487,7 @@ export function LandingContent({
             <a href="/chat" className="hover:text-foreground transition-colors">对话</a>
             <a href="/image" className="hover:text-foreground transition-colors">图像</a>
             <a href="/video" className="hover:text-foreground transition-colors">视频</a>
-            <a href="/#pricing" className="hover:text-foreground transition-colors">价格</a>
+            <a href="/pricing" className="hover:text-foreground transition-colors">价格</a>
           </div>
         </div>
       </footer>

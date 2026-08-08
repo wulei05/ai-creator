@@ -203,9 +203,13 @@ export function ExploreWorkspace() {
 /* ---------- 顶部模型条目 ---------- */
 function ModelChip({ model }: { model: ModelInfo & { kind: 'image' | 'video' } }) {
   const Icon = model.kind === 'video' ? Video : ImageIcon;
+  const href = model.kind === 'video'
+    ? `/video?model=${model.id}`
+    : `/image?model=${model.id}`;
   return (
-    <div
-      className="group relative flex h-[80px] w-[220px] shrink-0 items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-3 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+    <Link
+      href={href}
+      className="group relative flex h-[80px] w-[220px] shrink-0 items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-3 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:border-white/20"
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
         <Icon className="size-5 text-white" />
@@ -215,7 +219,7 @@ function ModelChip({ model }: { model: ModelInfo & { kind: 'image' | 'video' } }
         <p className="mt-0.5 text-xs text-white/60">{model.credits} 积分</p>
       </div>
       <Bot className="absolute -bottom-2 -right-2 size-12 text-white/5 transition-transform duration-300 group-hover:scale-110" />
-    </div>
+    </Link>
   );
 }
 
