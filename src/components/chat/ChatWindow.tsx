@@ -9,8 +9,28 @@ import { cn } from '@/lib/utils';
 import { useModels } from '@/lib/hooks/useModels';
 import { useAuthGate } from '@/lib/auth-gate';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+// 按 provider 分组
+const PROVIDER_GROUPS: { label: string; prefix: string[] }[] = [
+  { label: 'DeepSeek',  prefix: ['deepseek'] },
+  { label: 'OpenAI',    prefix: ['gpt', 'o1', 'o3'] },
+  { label: 'Anthropic', prefix: ['claude'] },
+  { label: 'xAI',       prefix: ['grok'] },
+  { label: 'Google',    prefix: ['gemini', 'imagen'] },
+  { label: 'Kimi',      prefix: ['kimi'] },
+  { label: '通义千问',  prefix: ['qwen', 'qwq'] },
+  { label: '智谱 GLM',  prefix: ['glm'] },
+];
+
+function getProviderLabel(id: string): string {
+  for (const g of PROVIDER_GROUPS) {
+    if (g.prefix.some((p) => id.startsWith(p))) return g.label;
+  }
+  return '其他';
+}
 
 type ChatModel = string;
 type Message = { role: 'user' | 'assistant'; content: string; image?: string };
@@ -217,22 +237,45 @@ export function ChatWindow() {
               {currentModelInfo?.label ?? model}
               <ChevronDown className="size-3 opacity-60" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-[60vh] min-w-[260px] overflow-y-auto">
-              {models.map((m) => (
-                <DropdownMenuItem
-                  key={m.id}
-                  onClick={() => m.available && setModel(m.id)}
-                  disabled={!m.available}
-                  className={`flex items-center gap-2 ${m.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
-                >
-                  <span className="flex-1">{m.label}</span>
-                  {m.available ? (
-                    <span className="text-xs text-muted-foreground">{m.credits}c</span>
-                  ) : (
-                    <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground">暂未支持</span>
-                  )}
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="start" className="max-h-[70vh] w-[300px] overflow-y-auto p-1">
+              {(() => {
+                // 按 provider 分组
+                const groups: Record<string, typeof models> = {};
+                for (const m of models) {
+                  const g = getProviderLabel(m.id);
+                  (groups[g] ??= []).push(m);
+                }
+                return Object.entries(groups).map(([label, items], gi) => (
+                  <div key={label}>
+                    {gi > 0 && <DropdownMenuSeparator />}
+                    <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                      {label}
+                    </DropdownMenuLabel>
+                    {items.map((m) => (
+                      <DropdownMenuItem
+                        key={m.id}
+                        onClick={() => m.available && setModel(m.id)}
+                        disabled={!m.available}
+                        className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${
+                          model === m.id ? 'bg-primary/10 text-primary' : ''
+                        } ${m.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'}`}
+                      >
+                        {model === m.id && (
+                          <span className="size-1.5 rounded-full bg-primary shrink-0" />
+                        )}
+                        <span className={`flex-1 truncate text-sm ${model === m.id ? 'font-medium' : ''}`}>
+                          {m.label}
+                        </span>
+                        {m.available ? (
+                          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{m.credits}c</span>
+                        ) : (
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">暂未支持</span>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                ));
+              })()}
             </DropdownMenuContent>
           </DropdownMenu>
           {supportsVision && (
