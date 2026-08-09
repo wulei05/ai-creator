@@ -39,7 +39,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: ".next"
+          source: ".next,public,package.json,package-lock.json"
           target: /app/ai-creator
           overwrite: true
 
@@ -54,13 +54,10 @@ jobs:
             set -e
             cd /app/ai-creator
 
-            echo ">>> Pulling latest code..."
-            git pull origin dev
-
             echo ">>> Installing production dependencies..."
             npm ci --omit=dev
 
             echo ">>> Restarting application..."
             pm2 restart ai-creator --update-env
 
-            echo ">>> Deploy complete (commit: $(git rev-parse --short HEAD))"
+            echo ">>> Deploy complete"
