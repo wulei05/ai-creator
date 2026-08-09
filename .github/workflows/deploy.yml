@@ -38,7 +38,7 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: ".next"
-          target: ${{ secrets.DEPLOY_PATH }}
+          target: /app/ai-creator
           overwrite: true
 
       - name: Restart application
@@ -50,16 +50,15 @@ jobs:
           timeout: 5m
           script: |
             set -e
-            cd ${{ secrets.DEPLOY_PATH }}
+            cd /app/ai-creator
 
-            echo ">>> Pulling latest code (for package.json changes)..."
+            echo ">>> Pulling latest code..."
             git pull origin dev
 
             echo ">>> Installing production dependencies..."
             npm ci --omit=dev
 
             echo ">>> Restarting application..."
-            pm2 restart ai-creator --update-env \
-              || pm2 start npm --name ai-creator -- start
+            pm2 restart ai-creator --update-env
 
             echo ">>> Deploy complete (commit: $(git rev-parse --short HEAD))"
