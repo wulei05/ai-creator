@@ -6,10 +6,29 @@ import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { siteName, faviconUrl } = await getSiteBranding();
+  const base = (process.env.NEXT_PUBLIC_URL ?? 'https://ihuitoken.com').replace(/\/$/, '');
+  const description = '用 AI 创作图片、视频、网页——汇集 Flux、Imagen、Kling、Sora 等顶级模型，一站式 AI 创作平台。';
   return {
-    title: siteName,
-    description: "AI 创作平台",
+    title: { default: siteName, template: `%s | ${siteName}` },
+    description,
+    metadataBase: new URL(base),
     icons: faviconUrl !== "/favicon.ico" ? { icon: faviconUrl } : undefined,
+    openGraph: {
+      type: 'website',
+      siteName,
+      title: siteName,
+      description,
+      url: base,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: siteName,
+      description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 

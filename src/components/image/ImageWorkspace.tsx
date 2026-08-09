@@ -12,6 +12,7 @@ import {
   TEMPLATE_CATEGORIES, REFERENCE_IMAGE_MODELS,
   type AspectRatio, type TaskRecord,
 } from './templates';
+import { loadImagePrefs, useImagePrefsSaver } from '@/lib/hooks/useGenPrefs';
 
 const POLL_INTERVAL = 3000;
 const MAX_POLL_DURATION = 3 * 60 * 1000;
@@ -22,8 +23,14 @@ export function ImageWorkspace() {
   const searchParams = useSearchParams();
 
   const [prompt, setPrompt] = useState(() => searchParams.get('prompt') ?? '');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
-  const [imageModel, setImageModel] = useState('');
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(() => {
+    const p = loadImagePrefs();
+    return (p.aspectRatio as AspectRatio) ?? '1:1';
+  });
+  const [imageModel, setImageModel] = useState(() => {
+    const urlModel = searchParams.get('model');
+    return urlModel ?? loadImagePrefs().model ?? '';
+  });
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -57,6 +64,9 @@ export function ImageWorkspace() {
 
   const currentModel = models.find((m) => m.id === imageModel);
   const creditCost = currentModel?.credits ?? 0;
+
+  // 持久化用户偏好
+  useImagePrefsSaver({ model: imageModel, aspectRatio });
 
   const fetchHistory = async () => {
     try {

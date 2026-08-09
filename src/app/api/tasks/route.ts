@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') ?? 'all';
+  const search = searchParams.get('search')?.trim() ?? '';
   const rawLimit = parseInt(searchParams.get('limit') ?? '20', 10);
   const rawOffset = parseInt(searchParams.get('offset') ?? '0', 10);
   const limit = Math.min(isNaN(rawLimit) || rawLimit < 1 ? 20 : rawLimit, 100);
@@ -71,8 +72,11 @@ export async function GET(request: NextRequest) {
   } else if (type === 'video') {
     query = query.eq('type', 'video');
   } else {
-    // 'all' — filter to only image and video tasks
     query = query.in('type', ['image', 'video']);
+  }
+
+  if (search) {
+    query = query.ilike('prompt', `%${search}%`);
   }
 
   const { data: tasks, error, count } = await query;

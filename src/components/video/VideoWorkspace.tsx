@@ -9,6 +9,7 @@ import { useAuthGate } from '@/lib/auth-gate';
 import { VideoControls } from './VideoControls';
 import { VideoDiscoveryPanel } from './VideoDiscoveryPanel';
 import { TEMPLATE_CATEGORIES, type AspectRatio, type Duration, type TaskRecord } from './video-templates';
+import { loadVideoPrefs, useVideoPrefsSaver } from '@/lib/hooks/useGenPrefs';
 
 const POLL_INTERVAL = 5000;
 const MAX_POLL_DURATION = 5 * 60 * 1000;
@@ -18,10 +19,19 @@ export function VideoWorkspace() {
   const { require } = useAuthGate();
   const searchParams = useSearchParams();
 
-  const [videoModel, setVideoModel] = useState('');
+  const [videoModel, setVideoModel] = useState(() => {
+    const urlModel = searchParams.get('model');
+    return urlModel ?? loadVideoPrefs().model ?? '';
+  });
   const [prompt, setPrompt] = useState(() => searchParams.get('prompt') ?? '');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
-  const [duration, setDuration] = useState<Duration>(5);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(() => {
+    const p = loadVideoPrefs();
+    return (p.aspectRatio as AspectRatio) ?? '16:9';
+  });
+  const [duration, setDuration] = useState<Duration>(() => {
+    const p = loadVideoPrefs();
+    return (p.duration as Duration) ?? 5;
+  });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -44,6 +54,9 @@ export function VideoWorkspace() {
       if (firstAvailable) setVideoModel(firstAvailable.id);
     }
   }, [models, videoModel]);
+
+  // 持久化用户偏好
+  useVideoPrefsSaver({ model: videoModel, aspectRatio, duration });
 
   const fetchHistory = async () => {
     try {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Download, Trash2, CheckSquare, Square, ImageIcon,
-  Video, Loader2, RefreshCw, ChevronDown,
+  Video, Loader2, RefreshCw, ChevronDown, Search, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -30,16 +30,26 @@ export function WorksTab() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [deleting, setDeleting] = useState<Set<string>>(new Set());
   const [downloading, setDownloading] = useState(false);
   const offsetRef = useRef(0);
 
-  const fetchTasks = useCallback(async (type: FilterType, offset: number, replace: boolean) => {
+  // debounce search input 400ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchTasks = useCallback(async (type: FilterType, offset: number, replace: boolean, keyword = '') => {
     if (offset === 0) setLoading(true); else setLoadingMore(true);
     try {
-      const res = await fetch(`/api/tasks?type=${type}&limit=${PAGE_SIZE}&offset=${offset}`);
+      const params = new URLSearchParams({ type, limit: String(PAGE_SIZE), offset: String(offset) });
+      if (keyword) params.set('search', keyword);
+      const res = await fetch(`/api/tasks?${params}`);
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
       setTasks((prev) => replace ? data.tasks : [...prev, ...data.tasks]);
@@ -57,10 +67,10 @@ export function WorksTab() {
     offsetRef.current = 0;
     setSelected(new Set());
     setSelectMode(false);
-    fetchTasks(filter, 0, true);
-  }, [filter, fetchTasks]);
+    fetchTasks(filter, 0, true, debouncedSearch);
+  }, [filter, debouncedSearch, fetchTasks]);
 
-  const loadMore = () => fetchTasks(filter, offsetRef.current, false);
+  const loadMore = () => fetchTasks(filter, offsetRef.current, false, debouncedSearch);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -129,22 +139,43 @@ export function WorksTab() {
     <div className="space-y-4">
       {/* 工具栏 */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        {/* 左：类型筛选 */}
-        <div className="flex rounded-lg border overflow-hidden">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium transition-colors',
-                filter === f.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
+        {/* 左：类型筛选 + 搜索 */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex rounded-lg border overflow-hidden">
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium transition-colors',
+                  filter === f.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          {/* 搜索框 */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="搜索提示词..."
+              className="h-7 w-44 rounded-md border border-border bg-background pl-8 pr-7 text-xs outline-none focus:border-primary/60 transition-colors"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* 右：操作按钮 */}
