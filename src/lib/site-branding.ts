@@ -7,7 +7,7 @@ export type SiteBranding = {
 };
 
 const DEFAULTS = {
-  logoUrl: '/logo.png',
+  logoUrl: '/logo.webp',
   siteName: 'IHuiToken',
   faviconUrl: '/favicon.ico',
 } as const;
