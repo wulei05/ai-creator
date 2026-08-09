@@ -10,7 +10,7 @@ import { useModels } from '@/lib/hooks/useModels';
 import { useT } from '@/lib/i18n';
 import { useAuthGate } from '@/lib/auth-gate';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -248,7 +248,7 @@ export function ChatWindow() {
                   (groups[g] ??= []).push(m);
                 }
                 return Object.entries(groups).map(([label, items], gi) => (
-                  <div key={label}>
+                  <DropdownMenuGroup key={label}>
                     {gi > 0 && <DropdownMenuSeparator />}
                     <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                       {label}
@@ -275,7 +275,7 @@ export function ChatWindow() {
                         )}
                       </DropdownMenuItem>
                     ))}
-                  </div>
+                  </DropdownMenuGroup>
                 ));
               })()}
             </DropdownMenuContent>
