@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useT } from '@/lib/i18n';
 
 interface Task {
   id: string;
@@ -37,6 +38,7 @@ export function WorksTab() {
   const [deleting, setDeleting] = useState<Set<string>>(new Set());
   const [downloading, setDownloading] = useState(false);
   const offsetRef = useRef(0);
+  const { t } = useT();
 
   // debounce search input 400ms
   useEffect(() => {
@@ -130,9 +132,9 @@ export function WorksTab() {
   };
 
   const FILTERS: { id: FilterType; label: string }[] = [
-    { id: 'all', label: '全部' },
-    { id: 'image', label: '图像' },
-    { id: 'video', label: '视频' },
+    { id: 'all', label: t('studio_all') },
+    { id: 'image', label: t('studio_image') },
+    { id: 'video', label: t('studio_video') },
   ];
 
   return (
@@ -164,7 +166,7 @@ export function WorksTab() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索提示词..."
+              placeholder={t('studio_search')}
               className="h-7 w-44 rounded-md border border-border bg-background pl-8 pr-7 text-xs outline-none focus:border-primary/60 transition-colors"
             />
             {search && (
@@ -180,7 +182,7 @@ export function WorksTab() {
 
         {/* 右：操作按钮 */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">共 {total} 件</span>
+          <span className="text-xs text-muted-foreground">{t('studio_count')} {total} {t('studio_items')}</span>
           <button
             onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
             className={cn(
@@ -191,7 +193,7 @@ export function WorksTab() {
             )}
           >
             <CheckSquare className="size-3.5" />
-            {selectMode ? '退出选择' : '批量选择'}
+            {selectMode ? t('studio_exit_sel') : t('studio_select')}
           </button>
           {selectMode && (
             <>
@@ -199,7 +201,7 @@ export function WorksTab() {
                 onClick={selectAll}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                全选
+                {t('studio_select_all')}
               </button>
               <Button
                 size="sm"
@@ -213,14 +215,14 @@ export function WorksTab() {
                 ) : (
                   <Download className="size-3 mr-1" />
                 )}
-                下载 {selected.size > 0 ? `(${selected.size})` : ''}
+                {t('studio_download')} {selected.size > 0 ? `(${selected.size})` : ''}
               </Button>
             </>
           )}
           <button
             onClick={() => fetchTasks(filter, 0, true)}
             className="text-muted-foreground hover:text-foreground"
-            title="刷新"
+            title={t('studio_refresh')}
           >
             <RefreshCw className="size-4" />
           </button>
@@ -236,8 +238,8 @@ export function WorksTab() {
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
           <ImageIcon className="size-12 text-muted-foreground/30" />
           <div>
-            <p className="font-medium text-muted-foreground">还没有作品</p>
-            <p className="text-sm text-muted-foreground/60 mt-1">去生图或视频页创作你的第一件作品吧</p>
+            <p className="font-medium text-muted-foreground">{t('studio_empty')}</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">{t('studio_empty_hint')}</p>
           </div>
         </div>
       ) : (
@@ -274,7 +276,7 @@ export function WorksTab() {
                 ) : (
                   <ChevronDown className="size-4" />
                 )}
-                加载更多（还有 {total - tasks.length} 件）
+                {t('studio_load_more')} ({total - tasks.length})
               </button>
             </div>
           )}

@@ -8,6 +8,7 @@ import { AuthGateProvider } from '@/lib/auth-gate'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { getSiteBranding } from '@/lib/site-branding'
 import { Toaster } from 'sonner'
+import { LangProvider } from '@/components/providers/LangProvider'
 
 export default async function DashboardLayout({
   children,
@@ -19,6 +20,7 @@ export default async function DashboardLayout({
   const { logoUrl, siteName } = await getSiteBranding()
 
   return (
+    <LangProvider>
     <AuthGateProvider user={user}>
       <div className="flex h-screen bg-background">
         {/* 桌面侧边栏 */}
@@ -43,5 +45,6 @@ export default async function DashboardLayout({
         <AuthModal />
       </div>
     </AuthGateProvider>
+    </LangProvider>
   )
 }

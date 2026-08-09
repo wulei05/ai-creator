@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ArrowUp, Loader2, Paperclip, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModels } from '@/lib/hooks/useModels';
+import { useT } from '@/lib/i18n';
 import { useAuthGate } from '@/lib/auth-gate';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -49,6 +50,7 @@ export function ChatWindow() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = useMemo(() => createClient(), []);
   const { require } = useAuthGate();
+  const { t } = useT();
 
   useEffect(() => {
     if (models.length === 0) return;
@@ -222,7 +224,7 @@ export function ChatWindow() {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="随便问问…"
+        placeholder={t('chat_placeholder')}
         className="min-h-[40px] max-h-40 resize-none border-0 bg-transparent px-1 py-1 shadow-none focus-visible:ring-0"
         disabled={isStreaming}
       />
@@ -308,7 +310,7 @@ export function ChatWindow() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 px-4 pb-8 sm:gap-8 sm:pb-12">
         <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
-          嗨{greetingName ? `, ${greetingName}` : ''}. 准备好开始了吗?
+          {t('chat_greeting')}{greetingName ? `, ${greetingName}` : ''}. {t('chat_greeting_ready')}
         </h1>
         <div className="w-full max-w-2xl">{inputBox}</div>
       </div>

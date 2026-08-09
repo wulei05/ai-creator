@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Sparkles, Languages, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ModelInfo } from '@/lib/hooks/useModels';
+import { useT } from '@/lib/i18n';
 import { ReferenceUploader } from './ReferenceUploader';
 import {
   ASPECT_RATIOS, NO_ASPECT_RATIO_MODELS, REFERENCE_IMAGE_MODELS,
@@ -38,6 +39,7 @@ export function GenerationControls({
   const hasRefs = referenceImages.length > 0;
   const [translating, setTranslating] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
+  const { t } = useT();
 
   const handleTranslate = async () => {
     if (!prompt.trim()) { toast.error('请先输入描述词'); return; }
@@ -83,13 +85,13 @@ export function GenerationControls({
     <div className="flex flex-col gap-4 p-4 md:h-full md:overflow-y-auto">
       <h2 className="flex items-center gap-2 text-sm font-semibold">
         <Sparkles className="size-4 text-primary" />
-        图片生成
+        {t('image_title')}
       </h2>
 
       {/* 模型选择 */}
       {models.length > 1 && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">模型</label>
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('image_model')}</label>
           <div className="grid grid-cols-2 gap-2">
             {models.map((m) => {
               const refMismatch = hasRefs && !REFERENCE_IMAGE_MODELS.includes(m.id);
@@ -114,9 +116,9 @@ export function GenerationControls({
                 >
                   <div className="text-xs font-medium">{m.label}</div>
                   {unavailable ? (
-                    <div className="text-[10px] text-muted-foreground mt-0.5">暂未支持</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{t('unavailable')}</div>
                   ) : (
-                    <div className="text-xs text-muted-foreground">{m.credits} 积分</div>
+                    <div className="text-xs text-muted-foreground">{m.credits} {t('credits')}</div>
                   )}
                 </button>
               );
@@ -149,7 +151,7 @@ export function GenerationControls({
               className="flex items-center gap-1 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {translating ? <Loader2 className="size-3 animate-spin" /> : <Languages className="size-3" />}
-              翻译
+              {t('image_translate')}
             </button>
             <button
               type="button"
@@ -159,7 +161,7 @@ export function GenerationControls({
               className="flex items-center gap-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {optimizing ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3" />}
-              AI 优化
+              {t('image_optimize')}
             </button>
           </div>
         </div>
@@ -176,7 +178,7 @@ export function GenerationControls({
       {/* 宽高比 */}
       {!NO_ASPECT_RATIO_MODELS.includes(imageModel) && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">宽高比</label>
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('image_ratio')}</label>
           <div className="flex flex-wrap gap-2">
             {ASPECT_RATIOS.map((ratio) => (
               <Button
@@ -198,9 +200,9 @@ export function GenerationControls({
       <div className="mt-auto space-y-2 pt-2">
         <Button onClick={onGenerate} disabled={loading || !prompt.trim()} className="w-full" size="lg">
           {loading ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />正在生成图像，请稍候...</>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('image_generating')}</>
           ) : (
-            <><Sparkles className="mr-2 h-4 w-4" />生成图像 · {creditCost} 积分</>
+            <><Sparkles className="mr-2 h-4 w-4" />{t('image_generate')} · {creditCost} {t('credits')}</>
           )}
         </Button>
         {error && (

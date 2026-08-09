@@ -6,6 +6,7 @@ import { Loader2, Sparkles, Video } from 'lucide-react';
 import type { ModelInfo } from '@/lib/hooks/useModels';
 import { VideoImageUploader } from './VideoImageUploader';
 import { ASPECT_RATIOS, DURATIONS, type AspectRatio, type Duration } from './video-templates';
+import { useT } from '@/lib/i18n';
 
 interface VideoControlsProps {
   models: ModelInfo[];
@@ -36,17 +37,18 @@ export function VideoControls({
   imagePreview, imageFileName, onImageSelect, onImageRemove,
   loading, uploading, creditCost, error, onGenerate,
 }: VideoControlsProps) {
+  const { t } = useT();
   return (
     <div className="flex flex-col gap-4 p-4 md:h-full md:overflow-y-auto">
       <h2 className="flex items-center gap-2 text-sm font-semibold">
         <Video className="size-4 text-primary" />
-        视频生成
+        {t('video_title')}
       </h2>
 
       {/* 模型选择 */}
       {models.length > 1 && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">模型</label>
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('video_model')}</label>
           <div className="grid grid-cols-2 gap-2">
             {models.map((m) => {
               const unavailable = !m.available;
@@ -64,9 +66,9 @@ export function VideoControls({
                 >
                   <div className="text-xs font-medium">{m.label}</div>
                   {unavailable ? (
-                    <div className="text-[10px] text-muted-foreground mt-0.5">暂未支持</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{t('unavailable')}</div>
                   ) : (
-                    <div className="text-xs text-muted-foreground">{m.credits} 积分</div>
+                    <div className="text-xs text-muted-foreground">{m.credits} {t('credits')}</div>
                   )}
                 </button>
               );
@@ -103,7 +105,7 @@ export function VideoControls({
 
       {/* 视频时长 */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">视频时长</label>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('video_duration')}</label>
         <div className="grid grid-cols-2 gap-2">
           {DURATIONS.map((d) => (
             <button
@@ -125,7 +127,7 @@ export function VideoControls({
 
       {/* 画面比例 */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">画面比例</label>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('video_ratio')}</label>
         <div className="grid grid-cols-3 gap-2">
           {ASPECT_RATIOS.map((r) => (
             <button
@@ -151,12 +153,12 @@ export function VideoControls({
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {uploading ? '上传图片中...' : '正在生成视频，预计 1-3 分钟...'}
+              {uploading ? t('loading') : t('video_generating')}
             </>
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              生成视频 · {creditCost} 积分
+              {t('video_generate')} · {creditCost} {t('credits')}
             </>
           )}
         </Button>
