@@ -25,6 +25,7 @@ export interface TemplateCard {
   emoji: string;
   category: string;
   aspect: '1/1' | '4/5' | '3/4' | '16/9' | '9/16';
+  imageUrl?: string;
 }
 
 export const COMMUNITY_POSTS: CommunityPost[] = [
@@ -116,33 +117,90 @@ export const COMMUNITY_POSTS: CommunityPost[] = [
     prompt: 'abstract fluid art, swirling colors, vibrant rainbow palette, modern artistic composition',
     model: 'Gemini 3 Pro Image', tags: ['抽象', '艺术', '色彩'], aspect: '1/1',
   },
+  {
+    kind: 'post', id: 'p12',
+    author: { name: '极地探险', initials: '极' },
+    imageUrl: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80',
+    gradient: 'from-green-400 via-teal-400 to-indigo-600',
+    prompt: 'northern lights aurora borealis over frozen tundra, reflection in ice, breathtaking landscape',
+    model: 'Flux Pro', tags: ['极光', '风景', '自然'], aspect: '4/5',
+  },
+  {
+    kind: 'post', id: 'p13',
+    author: { name: '茶道禅意', initials: '茶' },
+    imageUrl: 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=600&q=80',
+    gradient: 'from-stone-400 via-amber-300 to-green-400',
+    prompt: 'traditional Japanese tea ceremony, zen garden view, shoji screen soft light, wabi-sabi aesthetic',
+    model: 'Imagen 4', tags: ['日式', '禅意', '建筑'], aspect: '3/4',
+  },
+  {
+    kind: 'post', id: 'p14',
+    author: { name: '数字游民', initials: '数' },
+    imageUrl: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=600&q=80',
+    gradient: 'from-orange-600 via-red-700 to-gray-800',
+    prompt: 'giant mech robot in destroyed urban battlefield, sunset silhouette, sparks flying, Pacific Rim style',
+    model: 'Flux Dev', tags: ['科幻', '机甲', '战争'], aspect: '9/16',
+  },
+  {
+    kind: 'post', id: 'p15',
+    author: { name: '糖果工坊', initials: '糖' },
+    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80',
+    gradient: 'from-pink-400 via-rose-300 to-purple-400',
+    prompt: 'dreamy pastel cake with edible flowers, mirror glaze, luxury patisserie photography, soft light',
+    model: 'Gemini 2.5 Flash Image', tags: ['美食', '甜品', '摄影'], aspect: '1/1',
+  },
+  {
+    kind: 'post', id: 'p16',
+    author: { name: '星际旅者', initials: '宇' },
+    imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80',
+    gradient: 'from-indigo-800 via-purple-800 to-blue-900',
+    prompt: 'astronaut floating in deep space, earth below, milky way background, photorealistic NASA style',
+    model: 'Imagen 4 Ultra', tags: ['宇宙', '太空', '科幻'], aspect: '4/5',
+  },
+  {
+    kind: 'post', id: 'p17',
+    author: { name: '雨林记者', initials: '雨' },
+    imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80',
+    gradient: 'from-green-600 via-emerald-500 to-teal-400',
+    prompt: 'ancient tropical rainforest, massive tree roots, dappled sunlight, bioluminescent plants, ethereal',
+    model: 'Flux Pro', tags: ['自然', '森林', '热带'], aspect: '3/4',
+  },
+  {
+    kind: 'post', id: 'p18',
+    author: { name: '武侠江湖', initials: '武' },
+    imageUrl: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=600&q=80',
+    gradient: 'from-orange-500 via-red-500 to-rose-600',
+    prompt: 'Chinese samurai warrior, bamboo forest, cherry blossoms, dramatic lighting, wuxia style illustration',
+    model: 'Grok Image', tags: ['武侠', '古风', '人物'], aspect: '9/16',
+  },
 ];
 
 // 给瀑布流增加密度的随机纵横比池 (按图像 / 视频区分)
-const IMAGE_ASPECTS = ['1/1', '4/5', '3/4'] as const;
+const IMAGE_ASPECTS = ['1/1', '4/5', '3/4', '9/16'] as const;
 const VIDEO_ASPECTS = ['16/9', '4/5', '1/1'] as const;
 
 function pickAspect<T extends readonly string[]>(pool: T, seed: number): T[number] {
   return pool[seed % pool.length];
 }
 
-// 从两个 TEMPLATE_CATEGORIES 抽取卡片，每类前 2 个
+// 从两个 TEMPLATE_CATEGORIES 抽取所有卡片
 export function buildTemplateCards(
-  imageCategories: Array<{ id: string; label: string; templates: Array<{ title: string; desc?: string; prompt: string; gradient: string; emoji: string }> }>,
+  imageCategories: Array<{ id: string; label: string; templates: Array<{ title: string; desc?: string; prompt: string; gradient: string; emoji: string; imageUrl?: string }> }>,
   videoCategories: Array<{ id: string; label: string; templates: Array<{ title: string; desc?: string; prompt: string; gradient: string; emoji: string }> }>,
 ): TemplateCard[] {
   const cards: TemplateCard[] = [];
   imageCategories.forEach((c, ci) =>
-    c.templates.slice(0, 2).forEach((t, ti) =>
+    c.templates.forEach((t, ti) =>
       cards.push({
         kind: 'template', id: `it-${c.id}-${ti}`, type: 'image',
         title: t.title, desc: t.desc, prompt: t.prompt, gradient: t.gradient, emoji: t.emoji,
-        category: c.label, aspect: pickAspect(IMAGE_ASPECTS, ci + ti),
+        category: c.label, aspect: pickAspect(IMAGE_ASPECTS, ci * 3 + ti),
+        imageUrl: t.imageUrl,
       }),
     ),
   );
   videoCategories.forEach((c, ci) =>
-    c.templates.slice(0, 2).forEach((t, ti) =>
+    c.templates.forEach((t, ti) =>
       cards.push({
         kind: 'template', id: `vt-${c.id}-${ti}`, type: 'video',
         title: t.title, desc: t.desc, prompt: t.prompt, gradient: t.gradient, emoji: t.emoji,

@@ -310,19 +310,30 @@ function TemplateCardView({ card }: { card: TemplateCard }) {
         className={`relative flex w-full items-center justify-center bg-gradient-to-br ${card.gradient}`}
         style={{ aspectRatio: card.aspect.replace('/', ' / ') }}
       >
-        <div className="absolute inset-0 bg-black/15 transition-colors group-hover:bg-black/5" />
-        <span className="relative z-10 text-5xl drop-shadow-md">{card.emoji}</span>
+        {card.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={card.imageUrl}
+            alt={card.title}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/10" />
+        {!card.imageUrl && (
+          <span className="relative z-10 text-5xl drop-shadow-md">{card.emoji}</span>
+        )}
         {/* 左上：类别 chip */}
-        <span className="absolute left-2 top-2 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+        <span className="absolute left-2 top-2 z-10 rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
           {card.category}
         </span>
         {/* 右上：类型 chip */}
-        <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+        <span className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
           <TypeIcon className="size-2.5" />
           {card.type === 'video' ? '视频' : '图像'}
         </span>
         {/* 底部信息条 */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5">
+        <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/70 to-transparent p-2.5">
           <p className="truncate text-xs font-medium text-white">{card.title}</p>
           {card.desc && (
             <p className="mt-0.5 truncate text-[10px] text-white/70">{card.desc}</p>
