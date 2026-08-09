@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { WebToolTab } from '@/components/studio/WebToolTab';
+import { WorksTab } from '@/components/studio/WorksTab';
 import { useAuthGate } from '@/lib/auth-gate';
 import { History } from 'lucide-react';
 import { DraftBanner } from '@/components/studio/DraftBanner';
@@ -31,7 +32,7 @@ function getCanvasPoint(canvas: HTMLCanvasElement, clientX: number, clientY: num
 }
 
 export default function StudioPage() {
-  const [activeTab, setActiveTab] = useState<'image' | 'web'>('image');
+  const [activeTab, setActiveTab] = useState<'image' | 'web' | 'works'>('works');
   const [mode, setMode] = useState<Mode>('upload');
   const [tool, setTool] = useState<Tool>('brush');
   const [brushSize, setBrushSize] = useState(30);
@@ -247,10 +248,10 @@ export default function StudioPage() {
   if (mode === 'upload') return (
     <>
       {historyPanel}
-      <div className={cn("mx-auto space-y-6", activeTab === 'web' ? "max-w-5xl" : "max-w-2xl")}>
+      <div className={cn("mx-auto space-y-6", activeTab === 'web' ? "max-w-5xl" : activeTab === 'works' ? "max-w-6xl" : "max-w-2xl")}>
         {/* Tab switcher */}
         <div className="flex rounded-xl border overflow-hidden w-fit">
-          {(['image', 'web'] as const).map(tab => (
+          {([['works', '🗂️ 我的作品'], ['image', '🖼️ 图片编辑'], ['web', '🌐 网页工具']] as const).map(([tab, label]) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={cn(
                 'px-4 py-2 text-sm font-medium transition-colors',
@@ -258,7 +259,7 @@ export default function StudioPage() {
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground',
               )}>
-              {tab === 'image' ? '🖼️ 图片编辑' : '🌐 网页工具'}
+              {label}
             </button>
           ))}
         </div>
@@ -292,6 +293,7 @@ export default function StudioPage() {
           />
         )}
 
+        {activeTab === 'works' && <WorksTab />}
         {activeTab === 'web' && (
           <WebToolTab
             pendingRestore={pendingWebRestore}
@@ -371,7 +373,7 @@ export default function StudioPage() {
   return (
     <>
       {historyPanel}
-      <div className={cn("mx-auto space-y-4", activeTab === 'web' ? "max-w-5xl" : "max-w-3xl")}>
+      <div className={cn("mx-auto space-y-4", activeTab === 'web' ? "max-w-5xl" : activeTab === 'works' ? "max-w-6xl" : "max-w-3xl")}>
       {/* Tab switcher */}
       <div className="flex rounded-xl border overflow-hidden w-fit">
         {(['image', 'web'] as const).map(tab => (
@@ -386,6 +388,7 @@ export default function StudioPage() {
           </button>
         ))}
       </div>
+      {activeTab === 'works' && <WorksTab />}
       {activeTab === 'web' && <WebToolTab />}
       {activeTab === 'image' && <div className="space-y-4">
       <div className="flex items-center justify-between">
