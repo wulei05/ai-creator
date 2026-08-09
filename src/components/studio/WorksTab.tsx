@@ -42,8 +42,8 @@ export function WorksTab() {
 
   // debounce search input 400ms
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
   }, [search]);
 
   const fetchTasks = useCallback(async (type: FilterType, offset: number, replace: boolean, keyword = '') => {
