@@ -12,26 +12,28 @@ import {
   COMMUNITY_POSTS, buildTemplateCards, shuffleMix,
   type CommunityPost, type TemplateCard,
 } from './explore-data';
+import { useT } from '@/lib/i18n';
 
 type TopTab = 'inspire' | 'theme' | 'prompt';
 type SortKey = 'category' | 'detail' | 'work' | 'popular';
 
-const TOP_TABS: { id: TopTab; label: string }[] = [
-  { id: 'inspire', label: '灵感' },
-  { id: 'theme',   label: '主题' },
-  { id: 'prompt',  label: '提示词' },
-];
-
-const SORT_TABS: { id: SortKey; label: string }[] = [
-  { id: 'category', label: '分类' },
-  { id: 'detail',   label: '提示详情' },
-  { id: 'work',     label: '作品' },
-  { id: 'popular',  label: '流行度' },
-];
-
 export function ExploreWorkspace() {
   const { models: imageModels } = useModels('image');
   const { models: videoModels } = useModels('video');
+  const { t } = useT();
+
+  const TOP_TABS: { id: TopTab; label: string }[] = [
+    { id: 'inspire', label: t('explore_inspire') },
+    { id: 'theme',   label: t('explore_theme') },
+    { id: 'prompt',  label: t('explore_prompt') },
+  ];
+
+  const SORT_TABS: { id: SortKey; label: string }[] = [
+    { id: 'category', label: t('explore_category') },
+    { id: 'detail',   label: t('explore_detail') },
+    { id: 'work',     label: t('explore_work') },
+    { id: 'popular',  label: t('explore_popular') },
+  ];
 
   const [topTab, setTopTab] = useState<TopTab>('inspire');
   const [sortTab, setSortTab] = useState<SortKey>('category');
@@ -178,7 +180,7 @@ export function ExploreWorkspace() {
       <section>
         {items.length === 0 ? (
           <div className="py-24 text-center text-sm text-muted-foreground">
-            该分类下暂无内容
+            {t('explore_empty')}
           </div>
         ) : (
           <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6 2xl:columns-7">
@@ -196,6 +198,7 @@ export function ExploreWorkspace() {
 
 /* ---------- 顶部模型条目 ---------- */
 function ModelChip({ model }: { model: ModelInfo & { kind: 'image' | 'video' } }) {
+  const { t } = useT();
   const Icon = model.kind === 'video' ? Video : ImageIcon;
   const useHref = model.kind === 'video'
     ? `/video?model=${model.id}`
@@ -209,7 +212,7 @@ function ModelChip({ model }: { model: ModelInfo & { kind: 'image' | 'video' } }
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-white">{model.label}</p>
         <div className="mt-0.5 flex items-center gap-2">
-          <span className="text-xs text-white/60">{model.credits} 积分</span>
+          <span className="text-xs text-white/60">{model.credits} {t('credits')}</span>
           <Link href={infoHref} className="text-[10px] text-white/30 hover:text-white/60 transition-colors" onClick={(e) => e.stopPropagation()}>
             详情
           </Link>

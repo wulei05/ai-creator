@@ -79,6 +79,11 @@ export async function GET(request: NextRequest) {
     query = query.ilike('prompt', `%${search}%`);
   }
 
+  // has_output=1: 只返回已有输出 URL 的任务（用于作品库）
+  if (searchParams.get('has_output') === '1') {
+    query = query.not('output_url', 'is', null);
+  }
+
   const { data: tasks, error, count } = await query;
 
   if (error) {

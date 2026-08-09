@@ -49,7 +49,7 @@ export function WorksTab() {
   const fetchTasks = useCallback(async (type: FilterType, offset: number, replace: boolean, keyword = '') => {
     if (offset === 0) setLoading(true); else setLoadingMore(true);
     try {
-      const params = new URLSearchParams({ type, limit: String(PAGE_SIZE), offset: String(offset) });
+      const params = new URLSearchParams({ type, limit: String(PAGE_SIZE), offset: String(offset), has_output: '1' });
       if (keyword) params.set('search', keyword);
       const res = await fetch(`/api/tasks?${params}`);
       if (!res.ok) throw new Error('Failed');
