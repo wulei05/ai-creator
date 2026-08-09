@@ -16,6 +16,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LandingPage() {
-  const { logoUrl, siteName } = await getSiteBranding()
-  return <LandingContent logoUrl={logoUrl} siteName={siteName} />
+  return <LandingContent />
 }
