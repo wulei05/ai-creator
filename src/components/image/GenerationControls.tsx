@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Languages } from 'lucide-react';
+import { Loader2, Sparkles, Languages, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ModelInfo } from '@/lib/hooks/useModels';
 import { ReferenceUploader } from './ReferenceUploader';
@@ -37,6 +37,7 @@ export function GenerationControls({
 }: GenerationControlsProps) {
   const hasRefs = referenceImages.length > 0;
   const [translating, setTranslating] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
 
   const handleTranslate = async () => {
     if (!prompt.trim()) { toast.error('请先输入描述词'); return; }
@@ -55,6 +56,26 @@ export function GenerationControls({
       toast.error(e instanceof Error ? e.message : '翻译失败，请稍后重试');
     } finally {
       setTranslating(false);
+    }
+  };
+
+  const handleOptimize = async () => {
+    if (!prompt.trim()) { toast.error('请先输入描述词'); return; }
+    setOptimizing(true);
+    try {
+      const res = await fetch('/api/ai/optimize-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: prompt }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.optimized) throw new Error(data.error ?? '优化失败');
+      onPromptChange(data.optimized);
+      toast.success('提示词已 AI 优化');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '优化失败，请稍后重试');
+    } finally {
+      setOptimizing(false);
     }
   };
 
@@ -118,17 +139,27 @@ export function GenerationControls({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">描述词 Prompt</label>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground">{prompt.length}/1000</span>
             <button
               type="button"
               onClick={handleTranslate}
-              disabled={loading || translating || !prompt.trim()}
+              disabled={loading || translating || optimizing || !prompt.trim()}
               title="AI 翻译为英文（英文提示词效果更佳）"
-              className="flex items-center gap-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {translating ? <Loader2 className="size-3 animate-spin" /> : <Languages className="size-3" />}
-              AI 翻译
+              翻译
+            </button>
+            <button
+              type="button"
+              onClick={handleOptimize}
+              disabled={loading || translating || optimizing || !prompt.trim()}
+              title="AI 智能优化提示词，自动补充风格、光线、构图等细节"
+              className="flex items-center gap-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {optimizing ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3" />}
+              AI 优化
             </button>
           </div>
         </div>

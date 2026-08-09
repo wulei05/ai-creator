@@ -301,34 +301,55 @@ export default function CommunityPage() {
       {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {filtered.map(post => (
-          <div key={post.id} className="group flex flex-col rounded-xl border bg-card overflow-hidden hover:shadow-lg transition-all">
-            {/* Image area */}
+          <div key={post.id} className="group relative flex flex-col rounded-xl border bg-card overflow-hidden hover:shadow-xl hover:border-border/80 transition-all duration-300">
+            {/* Image area — imini 风格悬浮面板 */}
             <button
               type="button"
               onClick={() => setLightboxPost(post)}
-              className={`relative aspect-square bg-gradient-to-br ${post.gradient} overflow-hidden w-full text-left`}
+              className={`relative aspect-square bg-gradient-to-br ${post.gradient} overflow-hidden w-full text-left cursor-zoom-in`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={post.imageUrl}
                 alt={post.prompt.slice(0, 30)}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
-              {/* Hover overlay — 展示提示词 */}
-              <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2.5 gap-1">
-                <p className="text-white text-[10px] line-clamp-4 leading-relaxed">{post.prompt}</p>
-                <span className="text-white/50 text-[9px]">点击查看大图</span>
-              </div>
-              {/* Model badge */}
-              <div className="absolute top-2 left-2 rounded-full bg-black/50 backdrop-blur px-2 py-0.5 text-[9px] text-white font-medium">
+              {/* 模型 badge — 始终显示 */}
+              <div className="absolute top-2 left-2 rounded-full bg-black/55 backdrop-blur-sm px-2 py-0.5 text-[9px] text-white font-medium z-10">
                 {post.model}
+              </div>
+              {/* 点击提示 — hover 时淡出 */}
+              <div className="absolute top-2 right-2 rounded-full bg-black/40 backdrop-blur-sm p-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <svg className="size-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                </svg>
+              </div>
+              {/* imini 风格：提示词面板从底部滑入 */}
+              <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-20">
+                <div className="bg-black/80 backdrop-blur-md p-3 space-y-2">
+                  <p className="text-white text-[11px] leading-relaxed line-clamp-3">{post.prompt}</p>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); copyPrompt(post.prompt); }}
+                      className="flex-1 flex items-center justify-center gap-1 rounded-md bg-white/15 hover:bg-white/25 text-white text-[10px] font-medium py-1.5 transition-colors"
+                    >
+                      <Copy className="size-3" /> 复制提示词
+                    </button>
+                    <a
+                      href={`/image?prompt=${encodeURIComponent(post.prompt)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 flex items-center justify-center gap-1 rounded-md bg-primary/90 hover:bg-primary text-primary-foreground text-[10px] font-medium py-1.5 transition-colors"
+                    >
+                      <Wand2 className="size-3" /> 去生图
+                    </a>
+                  </div>
+                </div>
               </div>
             </button>
 
             {/* Info */}
             <div className="p-2.5 space-y-2">
-              {/* Author */}
               <div className="flex items-center gap-1.5">
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[9px] font-bold text-primary shrink-0">
                   {post.author.initials}
@@ -336,18 +357,7 @@ export default function CommunityPage() {
                 <span className="text-xs text-muted-foreground truncate">{post.author.name}</span>
                 <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{post.createdAt}</span>
               </div>
-
-              {/* Tags */}
-              <div className="flex gap-1 flex-wrap">
-                {post.tags.slice(0, 2).map(tag => (
-                  <span key={tag} className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-3 pt-0.5">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => toggleLike(post.id)}
                   className={cn('flex items-center gap-1 text-xs transition-colors', post.liked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500')}

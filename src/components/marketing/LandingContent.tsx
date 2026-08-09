@@ -500,8 +500,8 @@ export function LandingContent() {
           </div>
           {[
             { title: '产品', links: [{ label: 'AI 对话', href: '/chat' }, { label: '图像生成', href: '/image' }, { label: '视频生成', href: '/video' }, { label: '创作室', href: '/studio' }] },
-            { title: '资源', links: [{ label: '帮助中心', href: '#' }, { label: '定价方案', href: '/pricing' }, { label: '灵感社区', href: '/community' }, { label: '模型探索', href: '/explore' }] },
-            { title: '公司', links: [{ label: '关于我们', href: '#' }, { label: '联系方式', href: '#' }, { label: '隐私政策', href: '#' }, { label: '服务条款', href: '#' }] },
+            { title: '资源', links: [{ label: '定价方案', href: '/pricing' }, { label: '灵感社区', href: '/community' }, { label: '模型探索', href: '/explore' }, { label: '关于我们', href: '/about' }] },
+            { title: '法律', links: [{ label: '隐私政策', href: '/privacy' }, { label: '服务条款', href: '/terms' }, { label: '联系我们', href: 'mailto:support@ihuitoken.com' }] },
           ].map((col) => (
             <div key={col.title}>
               <div className="text-[0.8125rem] font-bold mb-3.5" style={{ color: '#f0f4ff' }}>{col.title}</div>

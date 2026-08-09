@@ -88,31 +88,25 @@ export function ExploreWorkspace() {
         </div>
       </section>
 
-      {/* 2) 4 个工具大入口卡 */}
+      {/* 2) 快捷功能入口（仅展示侧边栏未覆盖的能力） */}
       <section className="flex flex-col gap-3 md:flex-row">
         <ToolEntry
-          href="/image" emphasis label="图片生成"
-          desc="一句话生成精美图像 · 支持参考图"
-          gradient="from-blue-500/30 via-cyan-500/20 to-teal-500/20"
-          emoji="🖼️"
-        />
-        <ToolEntry
-          href="/video" label="视频创作"
-          desc="文本/图片生成短视频"
-          gradient="from-rose-500/30 via-pink-500/20 to-fuchsia-500/20"
-          emoji="🎬"
-        />
-        <ToolEntry
           href="/image?mode=edit" label="精细编辑" badge="NEW"
-          desc="扩图 / 抠图 / 移除物体"
+          desc="扩图 · 抠图 · 移除物体"
           gradient="from-amber-500/30 via-orange-500/20 to-red-500/20"
           emoji="✂️"
         />
         <ToolEntry
-          href="/studio" label="AI 工具"
-          desc="创作室 · 灵感画廊"
+          href="/studio" label="创作室"
+          desc="管理全部作品 · 批量导出"
           gradient="from-violet-500/30 via-purple-500/20 to-indigo-500/20"
           emoji="🧰"
+        />
+        <ToolEntry
+          href="/community" label="灵感社区"
+          desc="发现创作者的精彩作品"
+          gradient="from-emerald-500/30 via-teal-500/20 to-cyan-500/20"
+          emoji="🌐"
         />
       </section>
 
