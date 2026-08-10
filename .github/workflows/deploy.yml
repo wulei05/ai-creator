@@ -50,6 +50,7 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           timeout: 5m
+          envs: ADMIN_EMAIL
           script: |
             set -e
             cd /app/ai-creator
@@ -57,7 +58,12 @@ jobs:
             echo ">>> Installing production dependencies..."
             npm ci --omit=dev
 
+            echo ">>> Updating env..."
+            sed -i "s|^ADMIN_EMAIL=.*|ADMIN_EMAIL=$ADMIN_EMAIL|" .env.local
+
             echo ">>> Restarting application..."
             pm2 restart ai-creator --update-env
 
             echo ">>> Deploy complete"
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
