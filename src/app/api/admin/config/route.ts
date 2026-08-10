@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { invalidateConfigCache } from '@/lib/config';
+import { isAdmin } from '@/lib/is-admin';
 
 const adminClient = createSupabaseClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,8 +13,7 @@ const adminClient = createSupabaseClient(
 async function getAuthenticatedAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  if (user.email !== process.env.ADMIN_EMAIL) return null;
+  if (!user || !isAdmin(user.email)) return null;
   return user;
 }
 

@@ -23,12 +23,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Clean up zombie accounts (created by OTP but never completed registration)
+  await deleteZombieUser(email);
+
   const { error } = await adminClient.auth.signInWithOtp({
     email,
     options: { shouldCreateUser: true },
   });
 
   if (error) {
+    console.error('[send-register-code] signInWithOtp error:', error.status, error.message, error);
     const msg = error.message.toLowerCase();
     if (msg.includes('rate limit') || error.status === 429) {
       return NextResponse.json({ error: '发送过于频繁，请稍后再试' }, { status: 429 });
@@ -56,4 +60,18 @@ async function emailHasPassword(email: string): Promise<boolean> {
   const { data, error } = await adminClient.rpc('email_is_registered', { check_email: email });
   if (error) return false; // function not yet created → fail open
   return data === true;
+}
+
+// Delete a user who started OTP registration but never set a password (zombie state).
+// Requires SQL function: public.get_zombie_user_id(check_email text) → uuid
+// Safe to call even if user doesn't exist or function not yet created.
+async function deleteZombieUser(email: string): Promise<void> {
+  try {
+    const { data: userId } = await adminClient.rpc('get_zombie_user_id', { check_email: email });
+    if (userId) {
+      await adminClient.auth.admin.deleteUser(userId as string);
+    }
+  } catch {
+    // best-effort, don't block registration
+  }
 }

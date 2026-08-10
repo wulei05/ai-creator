@@ -226,8 +226,8 @@ export function AuthModal() {
                   {countdown > 0 ? `重新发送 (${countdown}s)` : '重新发送'}
                 </button>
               </div>
-              <Input id="modal-code" type="text" inputMode="numeric" placeholder="6 位验证码"
-                maxLength={6} value={code}
+              <Input id="modal-code" type="text" inputMode="numeric" placeholder="8 位验证码"
+                maxLength={8} value={code}
                 onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                 required autoFocus />
             </div>

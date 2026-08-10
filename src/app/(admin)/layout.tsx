@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Settings, Users, ScrollText, LayoutDashboard, Palette } from 'lucide-react';
+import { isAdmin } from '@/lib/is-admin';
 
 const NAV = [
   { href: '/admin',          label: '概览',     icon: LayoutDashboard },
@@ -17,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) redirect('/login');
 
-  if (user.email !== process.env.ADMIN_EMAIL) {
+  if (!isAdmin(user.email)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-lg font-medium text-destructive">Access denied</p>

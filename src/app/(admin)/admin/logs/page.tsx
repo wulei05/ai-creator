@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Fragment } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -132,9 +132,8 @@ export default function AdminLogsPage() {
             ) : tasks.length === 0 ? (
               <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">暂无日志</td></tr>
             ) : tasks.map(t => (
-              <>
+              <Fragment key={t.id}>
                 <tr
-                  key={t.id}
                   className="hover:bg-muted/20 transition-colors cursor-pointer"
                   onClick={() => setExpanded(expanded === t.id ? null : t.id)}
                 >
@@ -191,7 +190,7 @@ export default function AdminLogsPage() {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
